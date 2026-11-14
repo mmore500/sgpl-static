@@ -6,7 +6,7 @@
 struct Harness {
   sgpl_static::spec_t::peripheral_t peripheral;
 
-  void init(const program_t & program, Random & random) {
+  void init(const sgpl::Program<sgpl_static::spec_t> & program, Random & random) {
     for (const int dest : sgpl_static::jump_dests(program)) {
       peripheral.jump_table.push_back(dest);
     }

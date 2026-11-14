@@ -31,7 +31,7 @@ struct Harness {
     randomize(state, random, 0, end, odds, std::make_index_sequence<readable_t::GetSize()>{});
   }
 
-  void init(const program_t &, Random & random) {
+  void init(const sgpl::Program<sgpl_static::spec_t> &, Random & random) {
     randomize(peripheral.readable_state, random, readable_t::GetSize(), 1);
     randomize(peripheral.state_node_input.state, random, readable_t::GetSize(), 1);
   }

@@ -11,11 +11,14 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <string>
 #include <vector>
 
 #include "peripheral.hpp"
+
+#include "random.hpp"
+
+#include "harness.hpp"
 
 #include "sgpl/../../third-party/cereal/include/cereal/archives/json.hpp"
 #include "sgpl/../../third-party/cereal/include/cereal/types/vector.hpp"
@@ -39,29 +42,6 @@ static uint64_t input_salt;
 uint64_t sgpl_static_input(const uint64_t key) noexcept {
   return std::hash<uint64_t>{}(key * 0x9E37'79B9'7F4A'7C15ULL + input_salt) >> 7;
 }
-
-struct Random {
-  std::mt19937_64 engine;
-
-  uint64_t operator()(const uint64_t n) { return engine() % n; }
-
-  float value() {
-    switch ((*this)(6)) {
-      case 0: return 0.0f;
-      case 1: return 1.0f;
-      case 2: return static_cast<float>((*this)(8)) - 3.0f;
-      case 3: {
-        const uint32_t bits = engine();
-        float f;
-        std::memcpy(&f, &bits, sizeof(f));
-        return f;
-      }
-      default: return static_cast<float>(static_cast<double>((*this)(2000001)) / 1e6 - 1.0);
-    }
-  }
-};
-
-#include "harness.hpp"
 
 static program_t load_program(const std::string & path) {
   std::ifstream ifs(path);
