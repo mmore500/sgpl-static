@@ -25,6 +25,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
 ) / "sgpl-static"
+# how one pass finds dead instructions, by name
+SOLVERS = {"maybe-skip": do_pass}
 COMPILE_FLAGS = [
     "-DNDEBUG", "-w", "-O2", "-fno-math-errno", "-fno-jump-tables",
     "-fignore-exceptions", "-S", "-emit-llvm",
@@ -131,6 +133,9 @@ def main() -> None:
     parser.add_argument("--optflags", default="-passes=default<O2>",
                         help="flags for clang optimizer to strip IR code "
                         "(default: -passes=default<O2>)")
+    parser.add_argument("--solver", choices=SOLVERS, default="maybe-skip",
+                        help="how dead instructions are found (default: "
+                        "maybe-skip)")
     parser.add_argument("--max-passes", type=int, default=0,
                         help="stop after this many passes; 0 (default) "
                         "repeats until a pass makes no further nops")
@@ -198,7 +203,7 @@ def strip(args: argparse.Namespace, program: list, work: pathlib.Path) -> list:
     proven: set[int] = set()
     for number in itertools.count(1):
         todo = sorted(set(candidates) - proven)
-        final = do_pass(
+        final = SOLVERS[args.solver](
             saved_ir, size, todo, proven, opt_flags, args.jobs, number, rng
         )
         proven |= final

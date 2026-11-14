@@ -55,6 +55,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
 | `--cxxflags` | flags for clang++ to build naive IR, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for clang optimizer to strip IR code | `-passes=default<O2>` |
+| `--solver` | how dead instructions are found; only `maybe-skip` for now | `maybe-skip` |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
 | `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
