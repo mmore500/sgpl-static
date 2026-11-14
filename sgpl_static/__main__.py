@@ -129,7 +129,6 @@ def main():
                         default=int(os.environ.get("SLURM_CPUS_PER_TASK", 0))
                         or os.cpu_count(),
                         help="parallel opt runs (default: all cores)")
-    parser.add_argument("--workdir", help="scratch directory (default: temp)")
     parser.add_argument("--version", action="version", version=__version__)
     # argparse takes a value that starts with a dash for another option,
     # unless it is attached with "="
@@ -141,16 +140,23 @@ def main():
 
     document = json.loads(read(args.program))
     holder, key = find_program(document, args.program_key)
-    size = len(holder[key])
+    with tempfile.TemporaryDirectory(prefix="sgpl-static-") as work:
+        strip(args, holder, key, pathlib.Path(work))
 
-    work = pathlib.Path(args.workdir or tempfile.mkdtemp(prefix="sgpl-static-"))
-    work.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(document, indent=4) + "\n"
+    if args.output == "-":
+        sys.stdout.write(text)
+    else:
+        pathlib.Path(args.output).write_text(text)
+
+
+def strip(args, holder, key, work):
+    """Nop the dead instructions of the program at holder[key], in place."""
+    size = len(holder[key])
     (work / "peripheral.hpp").write_text(read(args.peripheral))
     (work / "program.json").write_text(json.dumps({"value0": holder[key]}))
     project = fetch_source(args.project, work / "project")
     flags = [f"-I{work}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
-    (work / "flags").write_text("\n".join(flags) + "\n")
-    (work / "project_root").write_text(f"{project}\n")
 
     def run(*command, **kwargs):
         return subprocess.run(
@@ -179,17 +185,8 @@ def main():
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)
-    (work / "stripped.json").write_text(stripped)
     holder[key] = json.loads(stripped)["value0"]
-
-    text = json.dumps(document, indent=4) + "\n"
-    if args.output == "-":
-        sys.stdout.write(text)
-    else:
-        pathlib.Path(args.output).write_text(text)
     log(f"nopped {len(proven)} of {len(candidates)} candidates")
-    if not args.workdir:
-        shutil.rmtree(work)
 
 
 if __name__ == "__main__":
