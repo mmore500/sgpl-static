@@ -5,7 +5,7 @@ import sys
 
 import tqdm
 
-from .find_dead import find_dead
+from .check_skips import check_skips
 
 
 def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
@@ -13,14 +13,14 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
     `max_passes`: 0 for as many passes as it takes."""
     proven = set()
 
-    def dead(maybe):
-        return find_dead(saved_ir, size, maybe, proven, opt_flags)
+    def check(maybe):
+        return check_skips(saved_ir, size, maybe, proven, opt_flags)
 
     def propose_skips(name, todo):
         """The positions of `todo` that are dead when skipped alone, on top
         of what is proven."""
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
-            alone = pool.map(lambda i: bool(dead({i})), todo)
+            alone = pool.map(lambda i: bool(check({i})), todo)
             # a bar on stderr, redrawn at most every 20 seconds
             alone = tqdm.tqdm(alone, name, len(todo), mininterval=20)
             proposed = {i for gone, i in zip(alone, todo) if gone}
@@ -31,13 +31,13 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
         """Add to `proven` the proposals that are dead together: what vanishes
         together is proven, and the rest are retried on top of it."""
         while proposed:
-            gone = dead(proposed)
+            gone = check(proposed)
             proven.update(gone)
             proposed -= gone
             if not gone:
                 break
         for i in sorted(proposed):  # stragglers, one by one
-            proven.update(dead({i}))
+            proven.update(check({i}))
         log(f"{name}: confirmed {len(proven)} in all")
 
     # Each pass retries everything still unproven on top of the passes before
