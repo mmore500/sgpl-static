@@ -75,34 +75,6 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --output stripped.json
 ```
 
-The peripheral header, [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp), defines `sgpl_static::spec_t`, the signalgp-lite spec to analyse.
-DISHTINY's real ops run against it unchanged.
-The header decides what is observable.
-Values it passes to `sgpl_static::observe` are: an instruction that can change them is kept.
-
-```cpp
-// a message to another cell is observable: its tag and its registers
-struct ObservedOutput {
-  template<typename Message> bool TryPut(const Message& message) {
-    observe(std::hash<dish_t::tag_t>{}(std::get<0>(message)));
-    for (const float reg : std::get<1>(message)) observe(reg);
-    return true;
-  }
-};
-```
-
-A function with an empty body has no effect, so an instruction that does nothing else is removed.
-
-```cpp
-// the self-send buffers are not observable: what is sent there is dropped
-struct Discarded {
-  template<typename Message> void push_back(const Message&) {}
-};
-```
-
-To change what counts as observable, change a member's type in the header's `Peripheral`.
-The helpers are in [include/sgpl_static/shim.hpp](include/sgpl_static/shim.hpp).
-
 ## Usage Example: Symbulation
 
 ```bash
@@ -114,14 +86,6 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
   --output stripped.json
-```
-
-Symbulation's instructions talk to a `CPUState`.
-The peripheral header, [peripherals/symbulation.hpp](peripherals/symbulation.hpp), supplies one for a stand-in world.
-Outputs, reproducing, donating, stealing and infecting are observable.
-
-```cpp
-template<typename... Org> void SymDonateToHost(Org&&...) { observe(DONATE); }
 ```
 
 ## Installation
