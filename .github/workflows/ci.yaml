@@ -57,14 +57,14 @@ jobs:
           project: https://github.com/mmore500/signalgp-lite@57a938a9e8fa7232699934f159a65428507cc017
           peripheral: tests/peripherals/mock.hpp
           cxxflags: -Iinclude -std=c++20
-          expect_mask: tests/data/mock_mask.txt
+          expect_output: tests/data/mock_stripped.json
     steps:
     - uses: actions/checkout@v4
     - name: Build image
       run: docker build -t sgpl-static .
     - name: Strip and check
       run: >-
-        docker run --rm -v "$PWD:/repo" -e EXPECT_MASK=${{ matrix.expect_mask }}
+        docker run --rm -v "$PWD:/repo" -e EXPECT_OUTPUT=${{ matrix.expect_output }}
         -e DEFAULT_PASSES=${{ matrix.default_passes }}
         --entrypoint /repo/tests/check.sh sgpl-static
         "${{ matrix.harness }}" "${{ matrix.program }}" "${{ matrix.key }}"

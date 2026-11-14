@@ -2,8 +2,7 @@
 # Strip a program, then compare original and stripped in the real engine.
 # usage: tests/check.sh <harness> <program> <program-key> <project>
 #          <peripheral> <cxxflags>
-# env EXPECT_MASK: file with the mask the strip must reproduce: one character
-#   per instruction, 1 where it was nopped
+# env EXPECT_OUTPUT: file the stripped JSON must match exactly
 # env DEFAULT_PASSES: if set, use the default --optflags
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,24 +17,19 @@ python3 -P -m sgpl_static --program "$program" --program-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
   "${passes[@]}" --output "$work/out.json"
 
-# the two instruction lists, and the mask: where their operations differ
+if [ -n "${EXPECT_OUTPUT:-}" ]; then
+  cmp "$work/out.json" "$EXPECT_OUTPUT"
+fi
+
+# the two instruction lists, for the validator
 python3 -P - "$program" "$work/out.json" "$key" "$work" <<'PY'
 import json, pathlib, sys
 from sgpl_static.__main__ import find_program
 *documents, key, work = sys.argv[1:]
-before, after = (
-    (lambda holder, last: holder[last])(*find_program(json.load(open(d)), key))
-    for d in documents
-)
-for name, program in ("original", before), ("stripped", after):
-    pathlib.Path(work, f"{name}.json").write_text(json.dumps({"value0": program}))
-pathlib.Path(work, "mask.txt").write_text("".join(
-    "01"[a["operation"] != b["operation"]] for a, b in zip(before, after)
-) + "\n")
+for name, document in zip(("original", "stripped"), documents):
+    holder, last = find_program(json.load(open(document)), key)
+    pathlib.Path(work, f"{name}.json").write_text(json.dumps({"value0": holder[last]}))
 PY
-if [ -n "${EXPECT_MASK:-}" ]; then
-  cmp "$work/mask.txt" "$EXPECT_MASK"
-fi
 
 # the validator, compiled from the project root as the tool compiles
 read -r root include < <(python3 -P -c '
