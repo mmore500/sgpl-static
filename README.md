@@ -67,11 +67,11 @@ Suggested optimizer passes:
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/1c67b75f8579a0bf87c82dac9e5f2b832fb038b5/examples/dishtiny.json \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/examples/dishtiny.json \
   --program-key value0.program \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
   -I include -I third-party/signalgp-lite/include -I /opt/mpi-include \
-  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/1c67b75f8579a0bf87c82dac9e5f2b832fb038b5/peripherals/dishtiny.hpp \
+  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/peripherals/dishtiny.hpp \
   --output stripped.json
 ```
 
@@ -109,11 +109,11 @@ The helpers are in [include/sgpl_static/shim.hpp](include/sgpl_static/shim.hpp).
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/1c67b75f8579a0bf87c82dac9e5f2b832fb038b5/examples/symbulation.json \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/examples/symbulation.json \
   --program-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
   -I source -I signalgp-lite/include -I Empirical/include \
-  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/1c67b75f8579a0bf87c82dac9e5f2b832fb038b5/peripherals/symbulation.hpp \
+  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/peripherals/symbulation.hpp \
   --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32 \
   --output stripped.json
 ```
