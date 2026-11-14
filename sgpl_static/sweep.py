@@ -18,9 +18,13 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
         number += 1
         todo = sorted(set(candidates) - proven)
         proposed = propose_skips(
-            saved_ir, size, todo, proven, opt_flags, jobs, f"pass {number}"
+            saved_ir, size, todo, proven, opt_flags, jobs,
+            f"pass {number} propose",
         )
-        final = finalize_skips(saved_ir, size, proposed, proven, opt_flags)
+        final = finalize_skips(
+            saved_ir, size, proposed, proven, opt_flags,
+            f"pass {number} finalize",
+        )
         log(f"pass {number}: proposed {len(proposed)}, finalized {len(final)}")
         if not final:
             break
