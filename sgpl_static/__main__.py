@@ -125,6 +125,9 @@ def main():
                         "e.g. '-Iinclude -std=c++20'")
     parser.add_argument("--optflags", default="-passes=default<O2>",
                         help="flags for opt (default: -passes=default<O2>)")
+    parser.add_argument("--max-passes", type=int, default=0,
+                        help="stop after this many passes; 0 (default) "
+                        "repeats until a pass proves nothing new")
     parser.add_argument("--jobs", type=int,
                         default=int(os.environ.get("SLURM_CPUS_PER_TASK", 0))
                         or os.cpu_count(),
@@ -181,7 +184,7 @@ def strip(args, holder, key, work):
     log(f"stage 2: sweeping {len(candidates)} of {size} instructions")
     proven = sweep(
         (work / "program.ll").read_text(), candidates, size,
-        shlex.split(args.optflags), args.jobs,
+        shlex.split(args.optflags), args.jobs, args.max_passes,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)

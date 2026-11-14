@@ -8,8 +8,9 @@ import tqdm
 from . import stage2
 
 
-def sweep(saved_ir, candidates, size, opt_flags, jobs):
-    """Returns the positions among `candidates` proven dead together."""
+def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
+    """Returns the positions among `candidates` proven dead together.
+    `max_passes`: 0 for as many passes as it takes."""
     proven = set()
 
     def run(maybe):
@@ -37,10 +38,16 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs):
                 proven.add(i)
         log(f"proven: {len(proven)}")
 
-    # The second pass retries everything still unproven on top of the first:
-    # some positions are only dead once others are gone.
-    prove("pass 1", sorted(candidates))
-    prove("pass 2", sorted(set(candidates) - proven))
+    # Each pass retries everything still unproven on top of the passes before
+    # it: some positions are only dead once others are gone. A pass that
+    # proves nothing leaves nothing for the next one to build on.
+    number = 0
+    while not max_passes or number < max_passes:
+        number += 1
+        already = len(proven)
+        prove(f"pass {number}", sorted(set(candidates) - proven))
+        if len(proven) == already:
+            break
     return proven
 
 

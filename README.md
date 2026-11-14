@@ -26,6 +26,7 @@ If it deletes an instruction's maybe-skip call, running or skipping that instruc
 
 Instructions are tested one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
 The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
+Passes repeat until one proves nothing new.
 
 ## Usage
 
@@ -54,6 +55,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
 | `--cxxflags` | flags for clang++, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for opt | `-passes=default<O2>` |
+| `--max-passes` | stop after this many passes; `0` repeats until a pass proves nothing new | `0` |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 
 Suggested optimizer passes:
