@@ -75,7 +75,8 @@ The second retries everything still unproven on top of the first, because some p
 
 - The engine check passed: 1,000 randomized runs, no difference.
 - The sweep took 714 s on 4 cores.
-- Two passes of `default<O1>` then `default<O2>` give the identical mask, in about twice the time.
+- Two passes of `default<O1>` then `default<O2>` give the identical mask.
+  That run took 1,299 s, but other jobs shared the cores, so the two times are not directly comparable.
 - Before anchors were gated, the op sweep proved 553 ops; all of them are still proven.
 - The hand-written mask prunes 623 of the same positions: 619 are shared, 19 are only here, and 4 (all local anchors) only there.
 
