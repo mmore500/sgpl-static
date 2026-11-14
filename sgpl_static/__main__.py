@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -117,25 +118,26 @@ def main():
     parser.add_argument("--project", required=True,
                         help="project the program runs in, e.g. dishtiny: "
                         "directory, tarball URL, or git-url@ref")
-    parser.add_argument("-I", dest="include", action="append", default=[],
-                        metavar="DIR",
-                        help="include directory, relative to the project "
-                        "root; repeatable")
     parser.add_argument("--peripheral", required=True,
                         help="peripheral header: file or URL")
-    parser.add_argument("-passes", default="default<O2>",
-                        help="optimizer passes, as `opt -passes=` takes them "
-                        "(default: default<O2>)")
-    parser.add_argument("--cxxflag", action="append", default=[],
-                        help="extra compiler flag, e.g. -std=c++20; "
-                        "repeatable")
+    parser.add_argument("--cxxflags", default="",
+                        help="flags for clang++, run from the project root: "
+                        "e.g. '-Iinclude -std=c++20'")
+    parser.add_argument("--optflags", default="-passes=default<O2>",
+                        help="flags for opt (default: -passes=default<O2>)")
     parser.add_argument("--jobs", type=int,
                         default=int(os.environ.get("SLURM_CPUS_PER_TASK", 0))
                         or os.cpu_count(),
                         help="parallel opt runs (default: all cores)")
     parser.add_argument("--workdir", help="scratch directory (default: temp)")
     parser.add_argument("--version", action="version", version=__version__)
-    args = parser.parse_args()
+    # argparse takes a value that starts with a dash for another option,
+    # unless it is attached with "="
+    argv = sys.argv[1:]
+    for i, argument in enumerate(argv[:-1]):
+        if argument in ("--cxxflags", "--optflags"):
+            argv[i:i + 2] = [f"{argument}={argv[i + 1]}", ""]
+    args = parser.parse_args(list(filter(None, argv)))
 
     document = json.loads(read(args.program))
     holder, key = find_program(document, args.program_key)
@@ -146,10 +148,9 @@ def main():
     (work / "peripheral.hpp").write_text(read(args.peripheral))
     (work / "program.json").write_text(json.dumps({"value0": holder[key]}))
     project = fetch_source(args.project, work / "project")
-    flags = [f"-I{work}", f"-I{ROOT}/include"]
-    flags += [f"-I{project / include}" for include in args.include]
-    flags += args.cxxflag
+    flags = [f"-I{work}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
     (work / "flags").write_text("\n".join(flags) + "\n")
+    (work / "project_root").write_text(f"{project}\n")
 
     def run(*command, **kwargs):
         return subprocess.run(
@@ -160,20 +161,21 @@ def main():
         return run(work / "sgpl_gen", *command, stdout=subprocess.PIPE).stdout
 
     log("building the front end")
+    # the user's flags are relative to the project root
     run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
-        "-o", work / "sgpl_gen")
+        "-o", work / "sgpl_gen", cwd=project)
     kinds = [line[0] for line in gen("ops", work / "program.json").splitlines()]
     gen("gencpp", work / "program.json", work / "program.cpp")
     log("stage 1: compiling the program")
     run("clang++", *flags, *STAGE1_FLAGS, work / "program.cpp",
-        "-o", work / "program.ll")
+        "-o", work / "program.ll", cwd=project)
 
     # ops and local anchors can go; global anchors and nops stay as they are
     candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
     log(f"stage 2: sweeping {len(candidates)} of {size} instructions")
     proven = sweep(
-        (work / "program.ll").read_text(), candidates, size, args.passes,
-        args.jobs,
+        (work / "program.ll").read_text(), candidates, size,
+        shlex.split(args.optflags), args.jobs,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)

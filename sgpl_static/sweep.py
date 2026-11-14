@@ -8,12 +8,12 @@ import tqdm
 from . import stage2
 
 
-def sweep(saved_ir, candidates, size, passes, jobs):
+def sweep(saved_ir, candidates, size, opt_flags, jobs):
     """Returns the positions among `candidates` proven dead together."""
     proven = set()
 
     def run(maybe):
-        return stage2.kept(saved_ir, size, maybe, proven, passes)
+        return stage2.kept(saved_ir, size, maybe, proven, opt_flags)
 
     def prove(name, todo):
         """Add to `proven` what can be shown dead on top of it: each position

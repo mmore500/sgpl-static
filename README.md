@@ -33,16 +33,16 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program genome.json \
   --program-key value0.program \
   --project path/to/project \
-  -I include -I third-party/signalgp-lite/include \
   --peripheral peripheral.hpp \
+  --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
   --output stripped.json
 ```
 
 `--program` is a program or a genome that contains one; the output has the same shape.
 `--program-key` says where the instruction list is in that JSON, as dot-separated keys.
 `--project` is the code the program runs in, fetched with its submodules.
-`-I` puts a directory of the project on the include path; signalgp-lite's `include` must be among them.
 `--peripheral` says what is observable.
+`--cxxflags` go to clang++, which runs from the project root; they must put signalgp-lite's `include` on the include path.
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -51,16 +51,15 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--project` | directory, tarball URL, or `git-url@ref` | required |
 | `--peripheral` | peripheral header: file or URL | required |
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
-| `-I` | include directory, relative to the project root; repeatable | none |
-| `-passes` | optimizer passes, as `opt -passes=` takes them | `default<O2>` |
-| `--cxxflag` | extra compiler flag, e.g. `-std=c++20`; repeatable | none |
+| `--cxxflags` | flags for clang++, e.g. `"-Iinclude -std=c++20"` | none |
+| `--optflags` | flags for opt | `-passes=default<O2>` |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 | `--workdir` | scratch directory, kept afterwards | a temporary directory |
 
 Suggested optimizer passes:
 
 ```bash
--passes='function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
+--optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
 ```
 
 ## Usage Example: DISHTINY
@@ -70,12 +69,10 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/examples/dishtiny.json \
   --program-key value0.program \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
-  -I include -I third-party/signalgp-lite/include -I /opt/mpi-include \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/peripherals/dishtiny.hpp \
+  --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
   --output stripped.json
 ```
-
-conduit's headers include `<mpi.h>`; the image has MPI's headers at `/opt/mpi-include`.
 
 The peripheral header, [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp), defines `sgpl_static::spec_t`, the signalgp-lite spec to analyse.
 DISHTINY's real ops run against it unchanged.
@@ -112,9 +109,8 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/examples/symbulation.json \
   --program-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
-  -I source -I signalgp-lite/include -I Empirical/include \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/970f83429bea2e9327063987ccd14f342c2a593f/peripherals/symbulation.hpp \
-  --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32 \
+  --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
   --output stripped.json
 ```
 
