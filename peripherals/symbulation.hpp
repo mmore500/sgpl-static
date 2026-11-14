@@ -14,8 +14,8 @@
 
 #include "sgpl_static/shim.hpp"
 
-#include "source/sgp_mode/hardware/GenomeLibrary.h"
-#include "source/sgp_mode/hardware/SGPHardwareSpec.h"
+#include "sgp_mode/hardware/GenomeLibrary.h"
+#include "sgp_mode/hardware/SGPHardwareSpec.h"
 
 #include "sgpl/hardware/JumpTable.hpp"
 

@@ -8,10 +8,10 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
-def kept(saved_ir, size, maybe, nopped, pipeline):
+def kept(saved_ir, size, maybe, nopped, passes):
     """Positions whose skip() call survives. `maybe`: positions that may be
     skipped; `nopped`: positions always skipped; the rest always run.
-    `pipeline`: what `opt -passes=` accepts."""
+    `passes`: what `opt -passes=` accepts."""
     table = "".join(
         "\\02" if i in nopped else "\\01" if i in maybe else "\\00"
         for i in range(size)
@@ -21,7 +21,7 @@ def kept(saved_ir, size, maybe, nopped, pipeline):
         saved_ir,
     )
     out = subprocess.run(
-        ["opt", "-S", f"-passes={pipeline}"],
+        ["opt", "-S", f"-passes={passes}"],
         input=text, capture_output=True, text=True, check=True,
     ).stdout
     surviving = [LITERAL.fullmatch(argument) for argument in SKIP.findall(out)]

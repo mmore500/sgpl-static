@@ -3,8 +3,7 @@ FROM ubuntu:24.04
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/sgpl-static
 
 # clang and opt 18; MPI and METIS headers, which conduit's headers include.
-# CPATH puts MPI's headers on the compiler's default include path.
-ENV CPATH=/opt/mpi-include
+# MPI's headers are linked at /opt/mpi-include, a path to pass with -I.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates clang-18 git libmetis-dev libopenmpi-dev llvm-18 \

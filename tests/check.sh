@@ -3,7 +3,7 @@
 # usage: tests/check.sh <harness> <sgpl-static arguments...>
 # env EXPECT_MASK: file with the mask the strip must reproduce: one character
 #   per instruction, 1 where it was nopped
-# env DEFAULT_PIPELINE: if set, use the default --pipeline
+# env DEFAULT_PASSES: if set, use the default -passes
 set -euo pipefail
 cd "$(dirname "$0")/.."
 harness=$1; shift
@@ -11,9 +11,9 @@ work=$(mktemp -d)
 # -P: import the installed copy (PYTHONPATH), not this checkout
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
 # the reduced pass list from the README is much quicker than the default
-pipeline=(--pipeline "$(cat tests/lite5.txt)")
-if [ -n "${DEFAULT_PIPELINE:-}" ]; then pipeline=(); fi
-python3 -P -m sgpl_static "$@" "${pipeline[@]}" --workdir "$work" \
+passes=("-passes=$(cat tests/passes.txt)")
+if [ -n "${DEFAULT_PASSES:-}" ]; then passes=(); fi
+python3 -P -m sgpl_static "$@" "${passes[@]}" --workdir "$work" \
   --output "$work/out.json"
 if [ -n "${EXPECT_MASK:-}" ]; then
   # the mask is where the stripped program's operations differ

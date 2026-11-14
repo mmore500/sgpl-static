@@ -18,7 +18,7 @@
 #ifndef DISH2_SPEC
 #define DISH2_SPEC dish2::Spec_prq49
 #endif
-#include "include/dish2/spec/Spec.hpp"
+#include "dish2/spec/Spec.hpp"
 
 namespace sgpl_static {
 

@@ -116,15 +116,15 @@ def main():
                         help="stripped JSON: file, or - for stdout (default)")
     parser.add_argument("--project", required=True,
                         help="project the program runs in, e.g. dishtiny: "
-                        "directory, tarball URL, or git-url@ref; its root "
-                        "and its signalgp-lite go on the include path")
-    parser.add_argument("--include", action="append", default=[],
-                        help="further include directory, relative to the "
-                        "project root; repeatable")
+                        "directory, tarball URL, or git-url@ref")
+    parser.add_argument("-I", dest="include", action="append", default=[],
+                        metavar="DIR",
+                        help="include directory, relative to the project "
+                        "root; repeatable")
     parser.add_argument("--peripheral", required=True,
                         help="peripheral header: file or URL")
-    parser.add_argument("--pipeline", default="default<O2>",
-                        help="stage-2 passes, as `opt -passes=` takes them "
+    parser.add_argument("-passes", default="default<O2>",
+                        help="optimizer passes, as `opt -passes=` takes them "
                         "(default: default<O2>)")
     parser.add_argument("--cxxflag", action="append", default=[],
                         help="extra compiler flag, e.g. -std=c++20; "
@@ -146,12 +146,7 @@ def main():
     (work / "peripheral.hpp").write_text(read(args.peripheral))
     (work / "program.json").write_text(json.dumps({"value0": holder[key]}))
     project = fetch_source(args.project, work / "project")
-    sgpl = sorted(project.glob("**/include/sgpl/program/Program.hpp"),
-                  key=lambda path: len(path.parts))
-    if not sgpl:
-        sys.exit("sgpl-static: no signalgp-lite found in the project")
-    flags = [f"-I{work}", f"-I{ROOT}/include", f"-I{project}",
-             f"-I{sgpl[0].parents[2]}"]
+    flags = [f"-I{work}", f"-I{ROOT}/include"]
     flags += [f"-I{project / include}" for include in args.include]
     flags += args.cxxflag
     (work / "flags").write_text("\n".join(flags) + "\n")
@@ -177,7 +172,7 @@ def main():
     candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
     log(f"stage 2: sweeping {len(candidates)} of {size} instructions")
     proven = sweep(
-        (work / "program.ll").read_text(), candidates, size, args.pipeline,
+        (work / "program.ll").read_text(), candidates, size, args.passes,
         args.jobs,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
