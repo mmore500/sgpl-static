@@ -11,6 +11,7 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
+
 def optimize_skips(
     saved_ir: str,
     size: int,
@@ -43,4 +44,4 @@ def optimize_skips(
             # unknown: none of them holds
             return set()
         calls_left.add(int(literal[1]))
-    return set(maybe) - calls_left
+    return maybe - calls_left

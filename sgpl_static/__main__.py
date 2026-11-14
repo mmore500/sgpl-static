@@ -2,6 +2,7 @@
 nops."""
 
 import argparse
+import itertools
 import json
 import logging
 import os
@@ -83,7 +84,6 @@ def fetch_source(location: str, into: pathlib.Path) -> pathlib.Path:
     if not is_url(location):
         return pathlib.Path(location).resolve()
     if location.endswith((".tar.gz", ".tgz")):
-        shutil.rmtree(into, ignore_errors=True)
         into.mkdir()
         archive, _ = urllib.request.urlretrieve(location)
         with tarfile.open(archive) as tar:
@@ -198,16 +198,14 @@ def strip(
     # nothing leaves nothing for the next one to build on.
     rng = None if args.seed is None else random.Random(args.seed)
     proven: set[int] = set()
-    number = 0
-    while not args.max_passes or number < args.max_passes:
-        number += 1
+    for number in itertools.count(1):
         todo = sorted(set(candidates) - proven)
         final = do_pass(
             saved_ir, size, todo, proven, opt_flags, args.jobs, number, rng
         )
-        if not final:
-            break
         proven |= final
+        if not final or number == args.max_passes:
+            break
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)
     holder[key] = json.loads(stripped)["value0"]
