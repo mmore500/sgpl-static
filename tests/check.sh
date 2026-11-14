@@ -36,4 +36,4 @@ cp "$peripheral" "$work/peripheral.hpp"
 cp "tests/harness/$harness.hpp" "$work/harness.hpp"
 (cd "$root" && clang++ -I"$work" -I"$OLDPWD/include" $cxxflags -DNDEBUG -w -O2 \
   "$OLDPWD/tests/validate.cpp" -o "$work/validate")
-"$work/validate" "$work/original.json" "$work/stripped.json" 1000 300
+"$work/validate" "$work/original.json" "$work/stripped.json" 1000 300 60

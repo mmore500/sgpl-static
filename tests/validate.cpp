@@ -2,11 +2,15 @@
 // real signalgp-lite engine, on randomized inputs, and compares everything
 // observable. A difference means the stripped program is wrong.
 //
-//   validate <original.json> <stripped.json> <trials> <updates>
+//   validate <original.json> <stripped.json> <trials> <updates> <seconds>
+//
+// Runs at least <trials> trials, then keeps fuzzing until <seconds> have
+// passed. Each trial has its own seed, printed on a mismatch.
 //
 // Built against a peripheral header plus a harness header ("harness.hpp")
 // that says how to randomize that peripheral and what to compare.
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
@@ -96,18 +100,21 @@ static std::vector<uint64_t> run(const program_t & prog,
 }
 
 int main(const int argc, char ** argv) {
-  if (argc != 5) {
-    std::cerr << "usage: validate <original> <stripped> <trials> <updates>\n";
+  if (argc != 6) {
+    std::cerr << "usage: validate <original> <stripped> <trials> <updates> <seconds>\n";
     return 2;
   }
   const program_t original = load_program(argv[1]);
   const program_t stripped = load_program(argv[2]);
-  const int trials = std::atoi(argv[3]), updates = std::atoi(argv[4]);
+  const int min_trials = std::atoi(argv[3]), updates = std::atoi(argv[4]);
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(std::atoi(argv[5]));
   std::vector<tag_t> tags;
   for (const auto & inst : original) { tags.push_back(inst.tag); }
 
   size_t failures{}, events{};
-  for (int seed = 1; seed <= trials; ++seed) {
+  int trials{};
+  for (int seed = 1; seed <= min_trials || std::chrono::steady_clock::now() < deadline; ++seed) {
+    ++trials;
     const auto expected = run(original, tags, seed, updates);
     const auto actual   = run(stripped, tags, seed, updates);
     events += expected.size();
