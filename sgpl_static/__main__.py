@@ -182,8 +182,6 @@ def main():
         args.jobs,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
-    if "SGPL_STATIC_MASK_DUMP" in os.environ:
-        pathlib.Path(os.environ["SGPL_STATIC_MASK_DUMP"]).write_text(mask + "\n")
     stripped = gen("apply", work / "program.json", mask)
     (work / "stripped.json").write_text(stripped)
     holder[key] = json.loads(stripped)["value0"]

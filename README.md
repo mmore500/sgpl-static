@@ -12,27 +12,30 @@
 > [!WARNING]
 > sgpl-static is experimental. It may produce incorrect results, and its interface is subject to change.
 
-sgpl-static strips dead instructions from a [signalgp-lite](https://github.com/mmore500/signalgp-lite) program, replacing them with nops. An instruction is dead if it is unreachable or faint: nothing it computes ever reaches anything observable.
+sgpl-static strips dead instructions from a [signalgp-lite](https://github.com/mmore500/signalgp-lite) program, replacing them with nops.
 
 - Free software: MIT
 - Repository: <https://github.com/mmore500/sgpl-static>
 
+An instruction is dead if it can never run, or if it runs but nothing it computes can ever reach anything observable.
 Dead instructions are found with the clang/LLVM optimizer.
 The program is translated to C++ that calls the project's real op functors in program order, and compiled to LLVM IR.
 In that translation every instruction sits behind a *maybe skip*: a call the optimizer cannot see into decides whether the instruction runs.
 The optimizer then does its ordinary dead-code elimination.
 If it deletes an instruction's maybe-skip call, running or skipping that instruction makes no observable difference, so the instruction is dead.
+
 Instructions are tested one at a time and then together: those proven dead are skipped outright and the rest are retried, since removing one instruction can make another dead.
+
 What the optimizer treats as observable comes from a *peripheral header*: C++ that stands in for everything the ops read and write outside the program.
 
 ## Usage
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/dishtiny.json \
+  --program genome.json \
   --program-key value0.program \
-  --project https://github.com/mmore500/dishtiny@prq49 \
-  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/dishtiny.hpp \
+  --project path/to/project \
+  --peripheral peripheral.hpp \
   --output stripped.json
 ```
 
@@ -54,17 +57,52 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 | `--workdir` | scratch directory, kept afterwards | a temporary directory |
 
-Set `SGPL_STATIC_MASK_DUMP` to a path to also write the mask there: one character per instruction, `1` where it was nopped.
-
-This shorter pass list is the part of `default<O2>` that mattered on the dishtiny example, and takes under half the time:
+Suggested optimizer passes:
 
 ```bash
 --pipeline 'function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
 ```
 
-## Usage Example
+## Usage Example: DISHTINY
 
-Symbulation's instructions talk to a `CPUState`, and need a few compiler settings:
+```bash
+apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/dishtiny.json \
+  --program-key value0.program \
+  --project https://github.com/mmore500/dishtiny@prq49 \
+  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/dishtiny.hpp \
+  --output stripped.json
+```
+
+The peripheral header, [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp), defines `sgpl_static::spec_t`, the signalgp-lite spec to analyse.
+DISHTINY's real ops run against it unchanged.
+The header decides what is observable.
+Values it passes to `sgpl_static::observe` are: an instruction that can change them is kept.
+
+```cpp
+// a message to another cell is observable: its tag and its registers
+struct ObservedOutput {
+  template<typename Message> bool TryPut(const Message& message) {
+    observe(std::hash<dish_t::tag_t>{}(std::get<0>(message)));
+    for (const float reg : std::get<1>(message)) observe(reg);
+    return true;
+  }
+};
+```
+
+A function with an empty body has no effect, so an instruction that does nothing else is removed.
+
+```cpp
+// the self-send buffers are not observable: what is sent there is dropped
+struct Discarded {
+  template<typename Message> void push_back(const Message&) {}
+};
+```
+
+To change what counts as observable, change a member's type in the header's `Peripheral`.
+The helpers are in [include/sgpl_static/shim.hpp](include/sgpl_static/shim.hpp).
+
+## Usage Example: Symbulation
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
@@ -77,36 +115,21 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --output stripped.json
 ```
 
-The peripheral header, [peripherals/symbulation.hpp](peripherals/symbulation.hpp), defines `sgpl_static::spec_t`, the signalgp-lite spec to analyse.
-Symbulation's real instructions run against it unchanged.
-Each thing an instruction can do to the peripheral is one of two kinds:
+Symbulation's instructions talk to a `CPUState`.
+The peripheral header, [peripherals/symbulation.hpp](peripherals/symbulation.hpp), supplies one for a stand-in world.
+Outputs, reproducing, donating, stealing and infecting are observable.
 
 ```cpp
-// observable: every instruction feeding this call is kept
 template<typename... Org> void SymDonateToHost(Org&&...) { observe(DONATE); }
-
-// a no-op: instructions that only feed it are removed
-template<typename... Org> void SymDonateToHost(Org&&...) {}
 ```
-
-The header as shipped treats donating as observable, the first form.
-To declare something a no-op, give it an empty body.
-The helpers are in [include/sgpl_static/shim.hpp](include/sgpl_static/shim.hpp).
-For dishtiny, start from [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp).
-
-Symbulation's jump instructions set the program counter themselves.
-That is supported in programs without local anchors, and the header announces the targets with `jump_dests`.
 
 ## Installation
 
-The tool is the container image; there is nothing else to install.
+Run via apptainer (aka singularity):
 
 ```bash
-apptainer pull sgpl-static.sif docker://ghcr.io/mmore500/sgpl-static:v0.1.0
+apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 --help
 ```
-
-The image's filesystem is read-only under Apptainer, so scratch files go to `--workdir` or `$TMPDIR`.
-On compute nodes without network access, pass `--project`, `--program` and `--peripheral` as local paths.
 
 ## AI Use
 
