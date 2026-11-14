@@ -24,7 +24,7 @@ In that translation every instruction sits behind a *maybe skip*: a call the opt
 The optimizer then does its ordinary dead-code elimination.
 If it deletes an instruction's maybe-skip call, running or skipping that instruction makes no observable difference, so the instruction is dead.
 
-Instructions are tested one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
+Instructions are tested all at once and then, for those not yet found dead, one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
 The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
 Passes repeat until one makes no further nops.
 
