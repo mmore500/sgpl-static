@@ -23,11 +23,19 @@ namespace sgpl_static {
 
 enum Event : uint64_t { REPRODUCE = 1, OUTPUT, DONATE, STEAL, INFECT };
 
+// one unknown input per question and argument: the question in the top bits
+enum Question : uint64_t { VALID_OUTPUT = 1, HOST_TASK, CAN_PERFORM, CREDITED };
+inline bool unknown(const Question question, const uint64_t argument = 0) {
+  return input(question << 56 | (argument & ((1ULL << 56) - 1))) & 1;
+}
+
 // What the SenseTask instruction asks about tasks: unknown inputs.
 struct TaskRequirement { double task_value{}; };
 struct TaskIO {
   emp::vector<size_t> task_ids{0};
-  bool IsValidOutput(const uint32_t output) const { return input(output) & 1; }
+  bool IsValidOutput(const uint32_t output) const {
+    return unknown(VALID_OUTPUT, output);
+  }
   const emp::vector<size_t>& GetTaskIDs(uint32_t) const { return task_ids; }
 };
 struct IOBank {
@@ -38,7 +46,7 @@ struct TaskEnvironment {
   IOBank bank;
   TaskRequirement requirement;
   IOBank& GetIOBank() { return bank; }
-  bool IsHostTask(const size_t id) const { return input(id + 1000) & 1; }
+  bool IsHostTask(const size_t id) const { return unknown(HOST_TASK, id); }
   TaskRequirement& GetHostTaskReq(size_t) { return requirement; }
 };
 struct Config {
@@ -56,7 +64,7 @@ struct World {
   TaskEnvironment& GetTaskEnv() { return task_environment; }
   template<typename State, typename Requirement>
   bool CanPerformTask(const State&, const Requirement&) const {
-    return input(2000) & 1;
+    return unknown(CAN_PERFORM);
   }
   // interactions between organisms: observable
   template<typename... Org> void SymDonateToHost(Org&&...) { observe(DONATE); }
@@ -100,7 +108,7 @@ public:
   int& GetOrg() { return organism; }
   int& GetHost() { return host; }
   bool OutputCredited(const size_t task, const uint32_t output) const {
-    return sgpl_static::input(3000 + task + output) & 1;
+    return sgpl_static::unknown(sgpl_static::CREDITED, task << 32 | output);
   }
   void MarkReproAttempt() {
     repro_attempt = true;
