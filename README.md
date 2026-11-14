@@ -54,6 +54,8 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 | `--workdir` | scratch directory, kept afterwards | a temporary directory |
 
+Set `SGPL_STATIC_MASK_DUMP` to a path to also write the mask there: one character per instruction, `1` where it was nopped.
+
 This shorter pass list is the part of `default<O2>` that mattered on the dishtiny example, and takes under half the time:
 
 ```bash

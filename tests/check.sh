@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 harness=$1; shift
 work=$(mktemp -d)
 # the reduced pass list from the README: much quicker than the default
-TMPDIR="$work" python3 -m sgpl_static "$@" \
+SGPL_STATIC_MASK_DUMP="$work/mask.txt" python3 -m sgpl_static "$@" \
   --pipeline "$(cat tests/lite5.txt)" --workdir "$work" --output "$work/out.json"
 if [ -n "${EXPECT_MASK:-}" ]; then
   cmp "$work/mask.txt" "$EXPECT_MASK"
