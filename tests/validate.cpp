@@ -24,44 +24,46 @@
 #include "sgpl/program/Program.hpp"
 #include "sgpl/utility/ThreadLocalRandom.hpp"
 
-using spec_t = sgpl_static::spec_t;
-using program_t = sgpl::Program<spec_t>;
-using tag_t = spec_t::tag_t;
+using spec_t      = sgpl_static::spec_t;
+using program_t   = sgpl::Program<spec_t>;
+using tag_t       = spec_t::tag_t;
 using registers_t = sgpl::Core<spec_t>::registers_t;
 
 static std::vector<uint64_t> trace;
-void sgpl_static_observe(const uint64_t value) noexcept {
-  trace.push_back(value);
-}
+
+void sgpl_static_observe(const uint64_t value) noexcept { trace.push_back(value); }
 
 // inputs change between updates, identically for both programs
 static uint64_t input_salt;
+
 uint64_t sgpl_static_input(const uint64_t key) noexcept {
-  return std::hash<uint64_t>{}(key * 0x9E3779B97F4A7C15ULL + input_salt) >> 7;
+  return std::hash<uint64_t>{}(key * 0x9E37'79B9'7F4A'7C15ULL + input_salt) >> 7;
 }
 
 struct Random {
   std::mt19937_64 engine;
+
   uint64_t operator()(const uint64_t n) { return engine() % n; }
+
   float value() {
     switch ((*this)(6)) {
       case 0: return 0.0f;
       case 1: return 1.0f;
-      case 2: return (float)(*this)(8) - 3.0f;
+      case 2: return static_cast<float>((*this)(8)) - 3.0f;
       case 3: {
         const uint32_t bits = engine();
         float f;
         std::memcpy(&f, &bits, sizeof(f));
         return f;
       }
-      default: return (float)((double)(*this)(2000001) / 1e6 - 1.0);
+      default: return static_cast<float>(static_cast<double>((*this)(2000001)) / 1e6 - 1.0);
     }
   }
 };
 
 #include "harness.hpp"
 
-static program_t load_program(const std::string& path) {
+static program_t load_program(const std::string & path) {
   std::ifstream ifs(path);
   program_t prog;
   cereal::JSONInputArchive archive(ifs);
@@ -70,15 +72,17 @@ static program_t load_program(const std::string& path) {
 }
 
 // `tags`: the original program's tags, so both runs launch the same cores
-static std::vector<uint64_t> run(
-  const program_t& prog, const std::vector<tag_t>& tags, const int seed,
-  const int updates
-) {
+static std::vector<uint64_t> run(const program_t & prog,
+                                 const std::vector<tag_t> & tags,
+                                 const int seed,
+                                 const int updates) {
   sgpl::tlrand.Reseed(seed);
   Random random{std::mt19937_64(seed * 7919 + 13)};
   auto random_tag = [&]() {
     tag_t tag = tags[random(tags.size())];
-    if (random(2)) for (int k = random(6); k > 0; --k) tag.Toggle(random(64));
+    if (random(2)) {
+      for (int k = random(6); k > 0; --k) { tag.Toggle(random(64)); }
+    }
     return tag;
   };
 
@@ -90,28 +94,28 @@ static std::vector<uint64_t> run(
   for (int update{}; update < updates; ++update) {
     input_salt = random.engine();
     harness.perturb(random);
-    for (int k = random(3); k > 0; --k) cpu.ForceLaunchCore(random_tag());
+    for (int k = random(3); k > 0; --k) { cpu.ForceLaunchCore(random_tag()); }
     for (int k = random(3); k > 0; --k) {
-      const auto tag = random_tag();
+      const auto tag          = random_tag();
       const size_t jump_table = random(2);
       registers_t registers;
-      for (auto& reg : registers) reg = random.value();
-      if (cpu.TryLaunchCore(tag, jump_table))
-        cpu.GetFreshestCore().SetRegisters(registers);
+      for (auto & reg : registers) { reg = random.value(); }
+      if (cpu.TryLaunchCore(tag, jump_table)) { cpu.GetFreshestCore().SetRegisters(registers); }
     }
     sgpl::execute_cpu<spec_t>(1 + random(24), cpu, prog, harness.peripheral);
-    if (random(3) == 0) cpu.DecayGlobalRegulators();
+    if (random(3) == 0) { cpu.DecayGlobalRegulators(); }
     trace.push_back(0xFEED0000 + update);
     trace.push_back(cpu.GetCyclesSinceConstruction());
     trace.push_back(cpu.GetNumBusyCores());
-    for (size_t i{}; i < cpu.GetNumBusyCores(); ++i)
+    for (size_t i{}; i < cpu.GetNumBusyCores(); ++i) {
       trace.push_back(cpu.GetCore(i).GetProgramCounter());
+    }
     harness.snapshot();
   }
   return trace;
 }
 
-int main(int argc, char** argv) {
+int main(const int argc, char ** argv) {
   if (argc != 5) {
     std::cerr << "usage: validate <original> <stripped> <trials> <updates>\n";
     return 2;
@@ -120,19 +124,19 @@ int main(int argc, char** argv) {
   const program_t stripped = load_program(argv[2]);
   const int trials = std::atoi(argv[3]), updates = std::atoi(argv[4]);
   std::vector<tag_t> tags;
-  for (const auto& inst : original) tags.push_back(inst.tag);
+  for (const auto & inst : original) { tags.push_back(inst.tag); }
 
   size_t failures{}, events{};
   for (int seed = 1; seed <= trials; ++seed) {
     const auto expected = run(original, tags, seed, updates);
-    const auto actual = run(stripped, tags, seed, updates);
+    const auto actual   = run(stripped, tags, seed, updates);
     events += expected.size();
     if (expected != actual) {
       ++failures;
       std::cout << "MISMATCH seed " << seed << "\n";
     }
   }
-  std::cout << "trials " << trials << " failures " << failures
-    << " trace_events " << events << "\n";
+  std::cout << "trials " << trials << " failures " << failures << " trace_events " << events
+            << "\n";
   return failures ? 1 : 0;
 }

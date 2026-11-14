@@ -27,17 +27,17 @@ __attribute__((pure)) uint64_t sgpl_static_input(uint64_t key) noexcept;
 
 namespace sgpl_static {
 
-template<typename T>
-inline void observe(const T& value) {
-  static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value);
-  static_assert(sizeof(T) <= sizeof(uint64_t));
-  uint64_t bits{};
-  std::memcpy(&bits, &value, sizeof(T));
-  sgpl_static_observe(bits);
-}
+  template <typename T>
+  inline void observe(const T & value) {
+    static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value);
+    static_assert(sizeof(T) <= sizeof(uint64_t));
+    uint64_t bits{};
+    std::memcpy(&bits, &value, sizeof(T));
+    sgpl_static_observe(bits);
+  }
 
-inline uint64_t input(const uint64_t key) { return sgpl_static_input(key); }
+  inline uint64_t input(const uint64_t key) { return sgpl_static_input(key); }
 
-} // namespace sgpl_static
+}  // namespace sgpl_static
 
-#endif // #ifndef SGPL_STATIC_SHIM_HPP_INCLUDE
+#endif  // #ifndef SGPL_STATIC_SHIM_HPP_INCLUDE

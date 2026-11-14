@@ -26,28 +26,28 @@ jobs:
           program: examples/dishtiny.json
           key: value0.program
           project: https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d
-          peripheral: peripherals/dishtiny.hpp
+          peripheral: peripherals/dishtiny/prq49-as-of-2026-11-14.hpp
           cxxflags: -Iinclude -Ithird-party/signalgp-lite/include
         - name: symbulation
           harness: symbulation
           program: examples/symbulation.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
-          peripheral: peripherals/symbulation.hpp
+          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
         - name: symbulation jumps
           harness: symbulation
           program: tests/data/symbulation_jumps.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
-          peripheral: peripherals/symbulation.hpp
+          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
         - name: symbulation jumps, default passes
           harness: symbulation
           program: tests/data/symbulation_jumps.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
-          peripheral: peripherals/symbulation.hpp
+          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
           default_passes: 1
         - name: mock

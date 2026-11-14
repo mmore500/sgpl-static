@@ -23,36 +23,49 @@
 #include <cstring>
 #include <ctime>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <vector>
 #if __has_include("sgpl/../../third-party/conduit/include/uit_emp/math/Random.hpp")
 #include "sgpl/../../third-party/conduit/include/uit_emp/math/Random.hpp"
-namespace sgpl_static { using random_t = uit_emp::Random; }
-#else // older signalgp-lite: Empirical directly
+
+namespace sgpl_static {
+  using random_t = uit_emp::Random;
+}
+#else  // older signalgp-lite: Empirical directly
 #include "sgpl/../../third-party/Empirical/include/emp/math/Random.hpp"
-namespace sgpl_static { using random_t = emp::Random; }
+
+namespace sgpl_static {
+  using random_t = emp::Random;
+}
 #endif
 extern "C" {
 __attribute__((pure)) uint64_t rand_state(int site, int word) noexcept;
 }
+
 namespace sgpl {
-struct AnalysisRng {
-  sgpl_static::random_t rand{1};
-  // Every word of the engine's state is an opaque input. Seeding through the
-  // constructor is NOT enough: it takes a 31-bit seed, and the first draw
-  // from a small seed is nearly constant, which the optimizer can exploit.
-  explicit AnalysisRng(const int site) {
-    uint64_t words[sizeof(rand) / sizeof(uint64_t)];
-    static_assert(sizeof(words) == sizeof(rand));
-    for (int w{}; w < int(sizeof(words) / sizeof(uint64_t)); ++w)
-      words[w] = rand_state(site, w);
-    std::memcpy(static_cast<void*>(&rand), words, sizeof(rand));
-  }
-  sgpl_static::random_t& Get() { return rand; }
-  std::byte GetByte() { return std::byte(rand.GetUInt(256)); }
-};
-} // namespace sgpl
+  struct AnalysisRng {
+    sgpl_static::random_t rand{1};
+
+    // Every word of the engine's state is an opaque input. Seeding through the
+    // constructor is NOT enough: it takes a 31-bit seed, and the first draw
+    // from a small seed is nearly constant, which the optimizer can exploit.
+    explicit AnalysisRng(const int site) {
+      uint64_t words[sizeof(rand) / sizeof(uint64_t)];
+      static_assert(sizeof(words) == sizeof(rand));
+      for (size_t w{}; w < std::size(words); ++w) {
+        words[w] = rand_state(site, static_cast<int>(w));
+      }
+      std::memcpy(static_cast<void *>(&rand), words, sizeof(rand));
+    }
+
+    sgpl_static::random_t & Get() { return rand; }
+
+    std::byte GetByte() { return std::byte(rand.GetUInt(256)); }
+  };
+}  // namespace sgpl
+
 #define tlrand AnalysisRng{__COUNTER__}
 // ---------------------------------------------------------------------------
 
@@ -72,13 +85,11 @@ struct AnalysisRng {
 #define F_DECL(NAME) static void NAME(FPARAMS);
 
 // force the real op body inline, but leave module-to-module calls to clang
-template<size_t OP>
-__attribute__((flatten, always_inline)) static inline void run_op(
-  LCore& core, const LInst& I, LPeripheral& p
-) {
-  LSpec::library_t::template Operation<OP>::template run<LSpec>(
-    core, I, PROG, p
-  );
+template <size_t OP>
+__attribute__((flatten, always_inline)) static inline void run_op(LCore & core,
+                                                                  const LInst & I,
+                                                                  LPeripheral & p) {
+  LSpec::library_t::template Operation<OP>::template run<LSpec>(core, I, PROG, p);
 }
 
 // Maybe-skip: an opaque choice between running an instruction and not running
@@ -120,7 +131,7 @@ extern const unsigned char sgpl_enabled[SGPL_STATIC_PROGRAM_SIZE];
       run_op<OP>(core, I, p); \
     }
 #define FCALL(POS, ...) FCALL_(MAYBE_SKIP(POS), POS, __VA_ARGS__)
-#define FCALL_ALWAYS(POS, ...) FCALL_(false, POS, __VA_ARGS__) // anchors
+#define FCALL_ALWAYS(POS, ...) FCALL_(false, POS, __VA_ARGS__)  // anchors
 
 // launched core: run the module's own global anchor, then its body
 #define F_LAUNCH(NAME, BODY, ...) \
@@ -157,4 +168,4 @@ extern const unsigned char sgpl_enabled[SGPL_STATIC_PROGRAM_SIZE];
   } \
   if (core.index_jumped) { target = core.jump_index; goto index_jump; }
 
-#endif // #ifndef SGPL_STATIC_LOWER_FN_HPP_INCLUDE
+#endif  // #ifndef SGPL_STATIC_LOWER_FN_HPP_INCLUDE
