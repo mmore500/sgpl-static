@@ -1,21 +1,18 @@
 #!/bin/bash
 # Strip a program, then compare original and stripped in the real engine.
 # usage: tests/check.sh <harness> <program> <program-key> <project>
-#          <peripheral> <cxxflags>
+#          <peripheral> <cxxflags> [<optflags>]
 # env EXPECT_OUTPUT: file the stripped JSON must match exactly
-# env DEFAULT_PASSES: if set, use the default --optflags
 set -euo pipefail
 cd "$(dirname "$0")/.."
 harness=$1 program=$2 key=$3 project=$4 peripheral=$5 cxxflags=$6
+optflags=(${7:+--optflags "$7"})
 work=$(mktemp -d)
 # -P: import the installed copy (PYTHONPATH), not this checkout
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
-# the suggested passes from the README are much quicker than the default
-passes=(--optflags "-passes=$(cat tests/passes.txt)")
-if [ -n "${DEFAULT_PASSES:-}" ]; then passes=(); fi
 python3 -P -m sgpl_static --program "$program" --program-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
-  "${passes[@]}" --output "$work/out.json"
+  "${optflags[@]}" --output "$work/out.json"
 
 if [ -n "${EXPECT_OUTPUT:-}" ]; then
   cmp "$work/out.json" "$EXPECT_OUTPUT"

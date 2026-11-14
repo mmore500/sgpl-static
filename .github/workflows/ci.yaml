@@ -11,6 +11,10 @@ on:
     - '*'
   workflow_dispatch:
 
+env:
+  # the suggested passes from the README: much quicker than the default
+  SUGGESTED_OPTFLAGS: '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
+
 jobs:
   test:
     name: test ${{ matrix.name }}
@@ -57,10 +61,10 @@ jobs:
     - name: Strip and check
       run: >-
         docker run --rm -v "$PWD:/repo" -e EXPECT_OUTPUT=${{ matrix.expect_output }}
-        -e DEFAULT_PASSES=${{ matrix.default_passes }}
         --entrypoint /repo/tests/check.sh sgpl-static
         "${{ matrix.harness }}" "${{ matrix.program }}" "${{ matrix.key }}"
         "${{ matrix.project }}" "${{ matrix.peripheral }}" "${{ matrix.cxxflags }}"
+        "${{ matrix.default_passes && '' || env.SUGGESTED_OPTFLAGS }}"
 
   deploy-ghcr:
     name: Docker Image Deploy
