@@ -11,7 +11,7 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
-def resolve_skips(saved_ir, size, maybe, nopped, opt_flags):
+def optimize_skips(saved_ir, size, maybe, nopped, opt_flags):
     """The skips among `maybe` that hold together, given that the
     positions in `nopped` are skipped already.
 
