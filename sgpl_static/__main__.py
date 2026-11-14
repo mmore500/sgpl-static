@@ -184,14 +184,12 @@ def strip(
     # the user's flags are relative to the project root
     run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
         "-o", work / "sgpl_gen", cwd=project)
-    kinds = gen("ops", work / "program.json")
+    candidates = list(map(int, gen("candidates", work / "program.json").split()))
     gen("gencpp", work / "program.json", work / "program.cpp")
     logging.info("compiling the program")
     run("clang++", *flags, *COMPILE_FLAGS, work / "program.cpp",
         "-o", work / "program.ll", cwd=project)
 
-    # ops and local anchors can go; global anchors and nops stay as they are
-    candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
     logging.info(f"testing {len(candidates)} of {size} instructions")
     saved_ir = (work / "program.ll").read_text()
     opt_flags = shlex.split(args.optflags)

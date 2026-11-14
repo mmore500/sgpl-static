@@ -1,11 +1,9 @@
 // Front end: reads a signalgp-lite program and writes it as C++ that calls the
 // library's real op functors, for the optimizer to reason about.
 //
-//   sgpl_gen ops <prog.json>             one character per instruction: kind
+//   sgpl_gen candidates <prog.json>      positions worth testing, one per line
 //   sgpl_gen gencpp <prog.json> <out>    the program as C++
 //   sgpl_gen apply <prog.json> <mask>    the program with mask's 1s nopped
-//
-// kind: G global anchor, L local anchor, N nop, O anything else
 
 #include <cstdint>
 #include <cstdio>
@@ -309,15 +307,14 @@ void f_program(int entry, LPeripheral& p) {
 };
 
 int main(const int argc, char ** argv) {
-  if (argc < 3) { die("usage: sgpl_gen ops|gencpp|apply <prog.json> [arg]"); }
+  if (argc < 3) { die("usage: sgpl_gen candidates|gencpp|apply <prog.json> [arg]"); }
   const std::string_view mode = argv[1];
   program_t prog              = load_program(argv[2]);
-  if (mode == "ops") {
-    for (const auto & inst : prog) {
-      std::putchar(is_global(inst)                          ? 'G'
-                   : is_local(inst)                         ? 'L'
-                   : inst.GetOpName().rfind("Nop-", 0) == 0 ? 'N'
-                                                            : 'O');
+  if (mode == "candidates") {
+    // global anchors always stay, and a nop is already one
+    for (size_t i{}; i < prog.size(); ++i) {
+      const bool is_nop = prog[i].GetOpName().rfind("Nop-", 0) == 0;
+      if (!is_global(prog[i]) && !is_nop) { std::printf("%zu\n", i); }
     }
   } else if (mode == "gencpp" && argc == 4) {
     std::ofstream(argv[3]) << Generator(prog).program();
