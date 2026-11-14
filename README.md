@@ -31,12 +31,14 @@ The result is a set proven dead together, not the largest possible one.
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/dishtiny.json \
+  --program-key value0.program \
   --project https://github.com/mmore500/dishtiny@prq49 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/dishtiny.hpp \
   --output stripped.json
 ```
 
 `--program` is a program or a genome that contains one; the output has the same shape.
+`--program-key` says where the instruction list is in that JSON, as dot-separated keys.
 `--project` is the code the program runs in, fetched with its submodules; its root and its signalgp-lite go on the include path.
 `--peripheral` says what is observable.
 Each takes a local path or a URL.
@@ -46,6 +48,7 @@ For Symbulation, which needs a few compiler settings:
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/symbulation.json \
+  --program-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@main \
   --include Empirical/include \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/symbulation.hpp \
@@ -56,6 +59,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | Option | Meaning | Default |
 |---|---|---|
 | `--program` | program or genome JSON: file, URL, or `-` for stdin | required |
+| `--program-key` | where the instruction list is, e.g. `value0.program` | required |
 | `--project` | directory, tarball URL, or `git-url@ref` | required |
 | `--peripheral` | peripheral header: file or URL | required |
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |

@@ -86,16 +86,16 @@ def fetch_source(location, into):
     return fetch_git(*location.partition("@")[::2])
 
 
-def find_program(document):
-    """The instruction list inside a program or genome document, as
-    (container, key) so it can be replaced in place."""
+def find_program(document, key_path):
+    """The instruction list at `key_path` (dot-separated keys) in a program
+    or genome document, as (container, key) so it can be replaced in place."""
     holder, key = {"": document}, ""
-    for step in ("value0", "program"):
-        inner = holder[key]
-        if isinstance(inner, dict) and step in inner:
-            holder, key = inner, step
+    for step in filter(None, key_path.split(".")):
+        if not isinstance(holder[key], dict) or step not in holder[key]:
+            sys.exit(f"sgpl-static: no {step!r} at {key_path!r} in the input")
+        holder, key = holder[key], step
     if not isinstance(holder[key], list):
-        sys.exit("sgpl-static: no program found in the input JSON")
+        sys.exit(f"sgpl-static: {key_path!r} in the input is not a list")
     return holder, key
 
 
@@ -103,6 +103,9 @@ def main():
     parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
     parser.add_argument("--program", required=True,
                         help="program or genome JSON: file, URL, or - for stdin")
+    parser.add_argument("--program-key", required=True, metavar="PATH",
+                        help="where the instruction list is in the JSON, as "
+                        "dot-separated keys, e.g. value0.program")
     parser.add_argument("--output", default="-",
                         help="stripped JSON: file, or - for stdout (default)")
     parser.add_argument("--project", required=True,
@@ -133,7 +136,7 @@ def main():
 
     start = time.time()
     document = json.loads(read(args.program))
-    holder, key = find_program(document)
+    holder, key = find_program(document, args.program_key)
     size = len(holder[key])
 
     work = pathlib.Path(args.workdir or tempfile.mkdtemp(prefix="sgpl-static-"))
