@@ -1,12 +1,15 @@
 #pragma once
-// Shared between the validation tool and generated per-module programs.
+// Test peripheral: stand-ins for dishtiny's peripheral ops (same names and
+// register use, mock state). Runs on signalgp-lite master.
 #include <array>
-#include <bit>
+#include <cstring>
 #include <cstdint>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
+#include "sgpl_static/shim.hpp"
 
 #include "sgpl/hardware/Core.hpp"
 #include "sgpl/library/OpLibraryCoupler.hpp"
@@ -26,11 +29,13 @@ struct Peripheral {
   static constexpr size_t NN = 96; // neighbor state
   std::array<float, NR> own{};
   std::array<float, NN> nbr{};
-  std::vector<uint64_t> log;
-  void Log(uint64_t v); // defined out of line: opaque to the lowering
 };
 
-static uint32_t fbits(const float f) { return std::bit_cast<uint32_t>(f); }
+static uint32_t fbits(const float f) {
+  uint32_t bits;
+  std::memcpy(&bits, &f, sizeof(bits));
+  return bits;
+}
 
 #define STUB_META(NAME)                                                       \
   static std::string name() { return NAME; }                                  \
@@ -87,10 +92,10 @@ struct ReadNeighborState {
 template <int KIND> struct SendMessageIf {
   STUB_SIG {
     if (!core.registers[inst.args[0]]) return;
-    p.Log(0xABCD0000 + KIND);
-    p.Log(std::hash<typename Spec::tag_t>{}(inst.tag));
-    p.Log(inst.args[0] + inst.args[1] + inst.args[2]);
-    for (const float r : core.registers) p.Log(fbits(r));
+    sgpl_static::observe(0xABCD0000 + KIND);
+    sgpl_static::observe(std::hash<typename Spec::tag_t>{}(inst.tag));
+    sgpl_static::observe(inst.args[0] + inst.args[1] + inst.args[2]);
+    for (const float r : core.registers) sgpl_static::observe(r);
   }
   static std::string name() {
     return KIND == 0 ? "Send Inter-Cell Message"
@@ -128,10 +133,4 @@ struct spec_t : public sgpl::Spec<library_t, Peripheral> {
   static constexpr inline size_t num_cores{32};
 };
 
-using program_t = sgpl::Program<spec_t>;
-using inst_t = sgpl::Instruction<spec_t>;
-using tag_t = spec_t::tag_t;
-using core_t = sgpl::Core<spec_t>;
-using gjt_t = sgpl::JumpTable<spec_t, spec_t::global_matching_t>;
-constexpr int NREG = spec_t::num_registers;
-
+namespace sgpl_static { using spec_t = ::spec_t; }

@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches:
+    - main
+    tags:
+      - '*'
+  pull_request:
+    branches:
+    - '*'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        # each case: strip a program in the container, then compare original
+        # and stripped in the real engine (tests/check.sh)
+        - name: dishtiny
+          harness: dishtiny
+          args: >-
+            --program examples/dishtiny.json
+            --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d
+            --peripheral peripherals/dishtiny.hpp
+        - name: symbulation
+          harness: symbulation
+          args: >-
+            --program examples/symbulation.json
+            --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
+            --include Empirical/include
+            --peripheral peripherals/symbulation.hpp
+            --std c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
+        - name: symbulation jumps
+          harness: symbulation
+          args: >-
+            --program tests/data/symbulation_jumps.json
+            --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
+            --include Empirical/include
+            --peripheral peripherals/symbulation.hpp
+            --std c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
+        - name: mock
+          harness: mock
+          args: >-
+            --program tests/data/mock.json
+            --project https://github.com/mmore500/signalgp-lite@57a938a9e8fa7232699934f159a65428507cc017
+            --peripheral tests/peripherals/mock.hpp
+            --std c++20
+          expect_mask: tests/data/mock_mask.txt
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build image
+      run: docker build -t sgpl-static .
+    - name: Strip and check
+      run: >-
+        docker run --rm -v "$PWD:/repo" -e EXPECT_MASK=${{ matrix.expect_mask }}
+        --entrypoint /repo/tests/check.sh
+        sgpl-static ${{ matrix.harness }} ${{ matrix.args }}
+
+  deploy-ghcr:
+    name: Docker Image Deploy
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Set Tags
+      run: |
+        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          echo "TAGS=ghcr.io/mmore500/sgpl-static:latest,ghcr.io/mmore500/sgpl-static:${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        else
+          echo "TAGS=ghcr.io/mmore500/sgpl-static:latest" >> $GITHUB_ENV
+        fi
+    - name: Build and Push to GitHub Container Registry
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+        tags: ${{ env.TAGS }}

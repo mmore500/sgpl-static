@@ -1,88 +1,122 @@
-# sgpl dead-instruction prototype
+# sgpl-static
 
-Prototype tools for finding instructions in a signalgp-lite program that can be replaced by nops without changing observable behavior.
-Everything here was run on one genome: dishtiny prq49, series 16005, stint 100 (`genome_stint100_raw.json`).
+[
+![CI](https://github.com/mmore500/sgpl-static/actions/workflows/ci.yaml/badge.svg)
+](https://github.com/mmore500/sgpl-static/actions)
+[
+![GitHub stars](https://img.shields.io/github/stars/mmore500/sgpl-static.svg?style=round-square&logo=github&label=Stars&logoColor=white)](https://github.com/mmore500/sgpl-static)
 
-## Requirements
+> [!WARNING]
+> sgpl-static is experimental. It may produce incorrect results, and its interface is subject to change.
 
-- clang 18 and LLVM 18 tools (`opt`), g++ 13, Python 3.
-- signalgp-lite master checked out at `/tmp/sgpl/repo` with the conduit, Empirical, cereal, robin-hood-hashing and span-lite submodules.
-  That path is hard-coded in the scripts and compile commands.
-- Build the tool: `g++ -std=c++20 -O2 -DNDEBUG -w -I /tmp/sgpl/repo/include sgpl_dce.cpp -o sgpl_dce`
+sgpl-static strips a [signalgp-lite](https://github.com/mmore500/signalgp-lite) program: it replaces instructions that cannot affect anything observable with nops. JSON in, JSON out.
 
-## Design: gated maybe-skip (`lower_fn.hpp`, `stage2.py`, `sweep.py`)
+- Repository: <https://github.com/mmore500/sgpl-static>
 
-1. `sgpl_dce gencpp` writes the program as C++ that calls the real op functors.
+The program is written out as C++ that calls the project's real op functors, and compiled to LLVM IR once.
+Each instruction sits behind an opaque "maybe skip" choice.
+If the optimizer can delete that choice, skipping the instruction changes nothing observable, so the instruction is dead.
+What counts as observable is set by a *peripheral header*: a small C++ file that stands in for whatever the ops talk to.
 
-   ```
-   mkdir -p gen
-   printf 'FILE gen/gated.cpp\nFN x -2 -\nEND\n' | ./sgpl_dce gencpp prog100.json
-   ```
-2. Stage 1: compile once with clang, every instruction's skip behind a switch (`gen/gated.ll`).
+Nopped instructions keep their position and their RNG draws, so program length, timing and the random stream are unchanged.
+Global anchors are never touched.
+The result is a set proven dead together, not the largest possible one.
 
-   ```
-   clang++ -std=c++20 -DNDEBUG -w -fno-math-errno -fno-jump-tables -DSGPL_SKIP -DSGPL_GATED \
-     -DSGPL_FLAT_STEPS -fignore-exceptions -I /tmp/sgpl/repo/include -I . -O2 -S -emit-llvm \
-     gen/gated.cpp -o gen/gated.ll
-   ```
-3. Stage 2: `stage2.py` sets the switches in the saved IR and reruns `opt`.
-   An instruction is dead if its `skip(N)` call is gone.
-4. `sweep.py` tests every instruction alone, then proves the survivors together in joint rounds.
-   Result: `mask100_skip.txt` (638 of 1,394 ops and local anchors; log in `sweep.log`).
+## Usage
 
-### Local anchors
+```bash
+apptainer run docker://ghcr.io/mmore500/sgpl-static:latest \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/dishtiny.json \
+  --project https://github.com/mmore500/dishtiny@prq49 \
+  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/dishtiny.hpp \
+  --output stripped.json
+```
 
-A local anchor has no code to skip; what it does is exist as a jump and regulator target.
-Its switch therefore gates its presence in the module's local jump table:
+`--program` is a program or a genome that contains one; the output has the same shape.
+`--project` is the code the program runs in, fetched with its submodules; its root and its signalgp-lite go on the include path.
+`--peripheral` says what is observable.
+Each takes a local path or a URL.
 
-- The generator passes each instruction's local match as a chain, best match first, for example `LPICK(16, LPICK(20, -1))`.
-  The match is the first anchor in the chain that is present.
-  This is exact because sgpl's selector takes the minimum score and the first-inserted anchor on ties.
-- "The module has local anchors" and the table's identity token are expressions over the same switches.
+For Symbulation, which needs a few compiler settings:
 
-With anchors gated, stage 1 can no longer resolve jump targets, so stage 2 has to.
-The short pass list used before (`lite2`) cannot; `default<O2>` can, at about 2.5 s per variant.
-`lite5` in `stage2.py` is the part of `default<O2>` that matters here, at about 1.1 s per variant.
-It was found by deleting passes from `default<O2>` one at a time while the result still removed everything `default<O2>` removes.
-What it adds over `lite2`: inlining interleaved with cleanup, MemorySSA-based CSE, loop unrolling and deletion, GVN and jump threading.
+```bash
+apptainer run docker://ghcr.io/mmore500/sgpl-static:latest \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/symbulation.json \
+  --project https://github.com/anyaevostinar/SymbulationEmp@main \
+  --include Empirical/include \
+  --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/symbulation.hpp \
+  --std c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32 \
+  --output stripped.json
+```
 
-`sweep.py` runs two passes with `lite5`.
-The second retries everything still unproven on top of the first, because some positions are only dead once others are gone.
-
-## Files
-
-| File | What it is |
-|---|---|
-| `sgpl_dce.cpp` | Generator and the real-engine differential validator |
-| `mock_spec.hpp` | Spec with stand-ins for dishtiny's peripheral ops (same names and register use, mock state) |
-| `lower_core.hpp` | Analysis-only `sgpl::Core` specialization used by generated programs |
-| `lower_whole.hpp` | Shared declarations included by `lower_fn.hpp` |
-| `lower_fn.hpp` | Macros for the module-per-function form, RNG patch, maybe-skip and gating |
-| `stage2.py`, `sweep.py` | Stage 2 and the full sweep |
-| `genome_stint100_raw.json` | Original genome |
-| `prog100.json` | Just the program array, in the form `sgpl_dce` reads |
-| `mask100.txt` | Earlier hand-written-lowering mask (623), used by `sweep.py` for comparison |
-| `mask100_skip.txt` | Result of the sweep; one character per instruction, `1` = nop it |
-| `skip_leftover.txt` | Positions dead when skipped alone but not proven together (none in the current run) |
-
-## Results
-
-| | Dead | Of |
+| Option | Meaning | Default |
 |---|---|---|
-| Ops | 559 | 1,228 |
-| Local anchors | 79 | 166 |
-| Total | 638 | 1,394 |
+| `--program` | program or genome JSON: file, URL, or `-` for stdin | required |
+| `--project` | directory, tarball URL, or `git-url@ref` | required |
+| `--peripheral` | peripheral header: file or URL | required |
+| `--output` | stripped JSON: file, or `-` for stdout | `-` |
+| `--include` | further include directory, relative to the project root; repeatable | none |
+| `--pipeline` | stage-2 passes: `lite5`, `O1`, `O2`, `O3`, or anything `opt -passes=` accepts | `lite5` |
+| `--std` | C++ standard | `c++17` |
+| `--cxxflag` | extra compiler flag; repeatable | none |
+| `--jobs` | parallel `opt` runs | `SLURM_CPUS_PER_TASK`, else all cores |
+| `--report` | write a JSON report: mask, counts, time | none |
+| `--workdir` | scratch directory, kept afterwards | a temporary directory |
 
-- The engine check passed: 1,000 randomized runs, no difference.
-- The sweep took 714 s on 4 cores.
-- Two passes of `default<O1>` then `default<O2>` give the identical mask.
-  That run took 1,299 s, but other jobs shared the cores, so the two times are not directly comparable.
-- Before anchors were gated, the op sweep proved 553 ops; all of them are still proven.
-- The hand-written mask prunes 623 of the same positions: 619 are shared, 19 are only here, and 4 (all local anchors) only there.
+A stronger `--pipeline` can prove more instructions dead, never wrong ones; `lite5` is the part of `O2` that mattered on the dishtiny example, at under half the time.
+A peripheral header fetched by URL is compiled and run, so pin it to a commit.
 
-## Caveats
+## Peripheral headers
 
-- The dishtiny ops are mocks; real dishtiny was never run.
-- signalgp-lite master was used, not the commit dishtiny pins.
-- "Engine-checked" means 1,000 randomized runs in the real sgpl engine showed no difference; it is not a proof.
-- Cores are assumed to start only at global anchors by tag match, with registers possibly seeded by the host.
+A peripheral header defines `sgpl_static::spec_t`, the signalgp-lite spec to analyse.
+The project's real ops run against it unchanged.
+Each thing an op can do to the peripheral is one of two kinds:
+
+```cpp
+// observable: every instruction feeding this call is kept
+struct ObservedOutput {
+  template<typename Message> bool TryPut(const Message& message) {
+    sgpl_static::observe(std::get<0>(message)); // ...
+    return true;
+  }
+};
+
+// a no-op: instructions that only feed it are removed
+struct Discarded {
+  template<typename Message> bool TryPut(const Message&) { return true; }
+};
+```
+
+To declare something a no-op, give it an empty body.
+Start from [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp) or [peripherals/symbulation.hpp](peripherals/symbulation.hpp).
+
+Ops that set the program counter themselves, as Symbulation's jumps do, are supported in programs without local anchors.
+The header can announce their targets with `jump_dests`; see the Symbulation header.
+
+## Installation
+
+The tool is the container image; there is nothing else to install.
+
+```bash
+apptainer pull sgpl-static.sif docker://ghcr.io/mmore500/sgpl-static:latest
+```
+
+The image's filesystem is read-only under Apptainer, so scratch files go to `--workdir` or `$TMPDIR`.
+On compute nodes without network access, pass `--project`, `--program` and `--peripheral` as local paths.
+
+## Assumptions
+
+- Cores start only at global anchors, with registers the host may have set.
+- A global jump may land on any global anchor; global regulator writes and fork requests are always observable.
+- Local regulators are private to a core. After a core writes one, its later local jumps may land on any local anchor of the module.
+- Jump tables pick one match: the best score, first-inserted on ties (signalgp-lite's default selector).
+- The peripheral's own state may change between any two instructions.
+
+## Testing
+
+CI strips each example in the container, then runs original and stripped side by side in the real signalgp-lite engine on 1,000 randomized runs and compares everything observable ([tests/check.sh](tests/check.sh)).
+That check is evidence, not proof, and it is not part of the container.
+
+## AI Use
+
+Substantial portions of sgpl-static were prepared using agentic coding tools.

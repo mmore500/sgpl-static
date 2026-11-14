@@ -1,18 +1,24 @@
 #pragma once
-// Analysis-only stand-in for sgpl::Core, used by generated per-module programs.
+// Analysis-only stand-in for sgpl::Core, used by generated programs.
 //
 // Generated code calls the library's real op functors, unmodified. Only the
 // Core they operate on is swapped (by specializing sgpl::Core for LSpec):
 // registers are real, but matching, forking and regulator state are opaque
 // externs, so the optimizer sees exactly what each op reads and writes.
 
-#include "mock_spec.hpp"
+#include "peripheral.hpp" // the user's peripheral header: sgpl_static::spec_t
 
-struct LSpec : public spec_t {};
+struct LSpec : public sgpl_static::spec_t {};
+using LPeripheral = LSpec::peripheral_t;
+
+static_assert(LSpec::num_registers == 8, "generated code passes 8 registers");
+static_assert(LSpec::num_global_jump_tables == 2, "two global jump tables");
 
 extern "C" {
 void tick(int pos) noexcept;                       // one instruction of time
 __attribute__((pure)) float init_reg(int r) noexcept;
+// regulated global match: returns a global anchor position, or -1
+__attribute__((pure)) int gmatch(uint64_t tag, int jt) noexcept;
 // regulated local match: returns a local anchor position, or -1
 __attribute__((pure)) int lmatch(uint64_t table, uint64_t tag) noexcept;
 __attribute__((const)) uint64_t lreg_mod(
@@ -22,13 +28,8 @@ __attribute__((pure)) float lreg_view(uint64_t table, int anchor) noexcept;
 __attribute__((pure)) float greg_view(int jt, int anchor) noexcept;
 void greg_mod(int jt, int kind, int pos, uint32_t amt) noexcept;
 void fork_request(uint64_t tag) noexcept;
-void exit_global_jump(
-  uint64_t tag, int jt,
-  float, float, float, float, float, float, float, float
-) noexcept;
-void exit_fallthrough(
-  int pos, float, float, float, float, float, float, float, float
-) noexcept;
+// an indexed jump to a position the peripheral header did not announce
+__attribute__((noreturn)) void sgpl_static_bad_jump(int pos) noexcept;
 }
 
 struct LMatches {
@@ -41,7 +42,9 @@ struct LMatches {
 };
 
 static inline uint32_t lbits(const float v) {
-  return std::bit_cast<uint32_t>(v);
+  uint32_t bits;
+  std::memcpy(&bits, &v, sizeof(bits));
+  return bits;
 }
 
 // local jump table: contents summarized by an opaque state token
@@ -83,9 +86,10 @@ public:
   std::array<LGlobalTable, 2> global;
   size_t pc{};
   int h_jump{-1};       // unregulated local match for this instruction's tag
-  bool terminated{}, loaded{}, global_jumped{};
+  bool terminated{}, loaded{}, global_jumped{}, index_jumped{};
   uint64_t jump_tag{};
   int jump_jt{};
+  size_t jump_index{};
 
   void Terminate() noexcept { terminated = true; }
   bool HasTerminated() const noexcept { return terminated; }
@@ -104,6 +108,15 @@ public:
       ? h_jump : lmatch(local.state, q.GetUInt64(0));
     if (dest >= 0) pc = dest;
   }
+#ifdef SGPL_STATIC_FLAT
+  // An op sets the program counter itself (not sgpl's own jump ops). Only
+  // modelled without local anchors: the real core would keep its local jump
+  // table across such a jump.
+  void JumpToIndex(const size_t idx) noexcept {
+    index_jumped = true;
+    jump_index = idx;
+  }
+#endif
   auto& GetLocalJumpTable() noexcept { return local; }
   auto& GetGlobalJumpTable(const size_t jt=0) noexcept { return global[jt]; }
   bool RequestFork(const tag_t& tag) noexcept {
@@ -118,48 +131,3 @@ public:
 using LCore = sgpl::Core<LSpec>;
 using LInst = sgpl::Instruction<LSpec>;
 extern const sgpl::Program<LSpec> PROG; // never read by the analysis core
-
-// only registers that some destination can observably read leave a module
-#define XR(MASK, K) ((MASK) >> K & 1 ? core.registers[K] : 0.0f)
-#define REGS8(MASK) \
-  XR(MASK, 0), XR(MASK, 1), XR(MASK, 2), XR(MASK, 3), \
-  XR(MASK, 4), XR(MASK, 5), XR(MASK, 6), XR(MASK, 7)
-
-// FALL_LIVE / JUMP_LIVE: registers live after falling through into the next
-// module / after a global jump (bit k = register k)
-#define MODULE_BEGIN(NAME, FALL_LIVE, JUMP_LIVE) \
-  __attribute__((flatten)) void NAME(Peripheral& p) { \
-    const unsigned fall_live = FALL_LIVE, jump_live = JUMP_LIVE; \
-    LCore core; LInst I; \
-    for (int r{}; r < 8; ++r) core.registers[r] = init_reg(r); \
-    core.global[0].jt = 0; core.global[1].jt = 1;
-
-// call the real functor for one instruction
-#define CALL(POS, OP, A, B, C, TAG, HJ, HLR, HG0, HG1) \
-  tick(POS); \
-  I.op_code = OP; I.args = {A, B, C}; I.tag.SetUInt64(0, TAG); \
-  core.pc = POS; core.h_jump = HJ; \
-  core.local.pos = POS; core.local.h_raw = HLR; \
-  core.global[0].pos = POS; core.global[0].h_raw = HG0; \
-  core.global[1].pos = POS; core.global[1].h_raw = HG1; \
-  core.terminated = core.loaded = core.global_jumped = false; \
-  library_t::Operation<OP>::template run<LSpec>(core, I, PROG, p);
-
-// module's own global anchor: loads the module's local anchors
-#define STEP_ENTRY(J, HAS, TOKEN, ...) \
-  L##J: CALL(__VA_ARGS__) \
-  core.local.has_anchors = HAS; core.local.state = core.local.fresh = TOKEN;
-
-#define STEP(J, POS, ...) \
-  L##J: CALL(POS, __VA_ARGS__) \
-  if (core.terminated) return; \
-  if (core.global_jumped) { \
-    exit_global_jump(core.jump_tag, core.jump_jt, REGS8(jump_live)); return; \
-  } \
-  if (core.pc != POS) goto dispatch;
-
-// next module's global anchor: terminate, or run on into the next module
-#define STEP_END(J, POS, ...) \
-  L##J: CALL(POS, __VA_ARGS__) \
-  if (core.terminated) return; \
-  exit_fallthrough(POS, REGS8(fall_live)); return;
