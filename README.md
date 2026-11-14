@@ -28,7 +28,7 @@ Everything here was run on one genome: dishtiny prq49, series 16005, stint 100 (
 3. Stage 2: `stage2.py` sets the switches in the saved IR and reruns `opt`.
    An instruction is dead if its `skip(N)` call is gone.
 4. `sweep.py` tests every instruction alone, then proves the survivors together in joint rounds.
-   Result: `mask100_skip.txt` (629 of 1,394 ops and local anchors; log in `sweep.log`).
+   Result: `mask100_skip.txt` (638 of 1,394 ops and local anchors; log in `sweep.log`).
 
 ### Local anchors
 
@@ -40,8 +40,14 @@ Its switch therefore gates its presence in the module's local jump table:
   This is exact because sgpl's selector takes the minimum score and the first-inserted anchor on ties.
 - "The module has local anchors" and the table's identity token are expressions over the same switches.
 
-With anchors gated, stage 1 can no longer resolve jump targets, so stage 2 uses `default<O1>` instead of the short pass list.
-That costs about 1.3 s per variant instead of 0.4 s (11 minutes for the sweep on 4 cores).
+With anchors gated, stage 1 can no longer resolve jump targets, so stage 2 has to.
+The short pass list used before (`lite2`) cannot; `default<O2>` can, at about 2.5 s per variant.
+`lite5` in `stage2.py` is the part of `default<O2>` that matters here, at about 1.1 s per variant.
+It was found by deleting passes from `default<O2>` one at a time while the result still removed everything `default<O2>` removes.
+What it adds over `lite2`: inlining interleaved with cleanup, MemorySSA-based CSE, loop unrolling and deletion, GVN and jump threading.
+
+`sweep.py` runs two passes with `lite5`.
+The second retries everything still unproven on top of the first, because some positions are only dead once others are gone.
 
 ## Files
 
@@ -57,20 +63,21 @@ That costs about 1.3 s per variant instead of 0.4 s (11 minutes for the sweep on
 | `prog100.json` | Just the program array, in the form `sgpl_dce` reads |
 | `mask100.txt` | Earlier hand-written-lowering mask (623), used by `sweep.py` for comparison |
 | `mask100_skip.txt` | Result of the sweep; one character per instruction, `1` = nop it |
-| `skip_leftover.txt` | Positions dead when skipped alone but not proven together |
+| `skip_leftover.txt` | Positions dead when skipped alone but not proven together (none in the current run) |
 
 ## Results
 
 | | Dead | Of |
 |---|---|---|
-| Ops | 550 | 1,228 |
+| Ops | 559 | 1,228 |
 | Local anchors | 79 | 166 |
-| Total | 629 | 1,394 |
+| Total | 638 | 1,394 |
 
 - The engine check passed: 1,000 randomized runs, no difference.
-- Before anchors were gated, the op sweep proved 553 ops.
-  Three of those (814 `Modulo`, 1049 `Local Jump If`, 1050 `Not Equal`) are no longer proven.
-- The hand-written mask prunes 73 anchors; 69 are shared, 10 are only here, 4 only there.
+- The sweep took 714 s on 4 cores.
+- Two passes of `default<O1>` then `default<O2>` give the identical mask, in about twice the time.
+- Before anchors were gated, the op sweep proved 553 ops; all of them are still proven.
+- The hand-written mask prunes 623 of the same positions: 619 are shared, 19 are only here, and 4 (all local anchors) only there.
 
 ## Caveats
 

@@ -13,7 +13,25 @@ CLEAN = (
     "gvn,dse,adce,simplifycfg,instcombine)"
 )
 LITE = "function(sroa,early-cse,instcombine,simplifycfg,sccp,adce,simplifycfg)"
+# Gated local anchors leave jump targets open until stage 2. This is the part
+# of default<O2> that resolves them, found by deleting passes from O2 while it
+# still removed everything O2 removes: inlining interleaved with cleanup,
+# MemorySSA-based CSE, loop unrolling and deletion (the ops' "for each
+# matching anchor" loops run 0 or 1 times), GVN and jump threading.
+IC = "instcombine<no-verify-fixpoint>"
+SC = "simplifycfg<switch-range-to-icmp>"
+LITE5 = (
+    f"function(early-cse,{IC}),"
+    "cgscc(devirt<4>(inline,function<eager-inv;no-rerun>("
+    f"sroa,early-cse<memssa>,{SC},loop(loop-unroll-full),sroa,gvn,bdce,"
+    "jump-threading))),"
+    "deadargelim,"
+    f"function(loop(loop-deletion),{IC},simplifycfg<forward-switch-cond;"
+    f"switch-range-to-icmp;hoist-common-insts;sink-common-insts>,{IC}),"
+    "globaldce"
+)
 PIPELINES = {
+    "lite5": LITE5,
     "lean2": f"ipsccp,globalopt,{CLEAN},deadargelim,{CLEAN},globaldce",
     "lite": f"ipsccp,globalopt,{LITE},deadargelim,{LITE},deadargelim,{LITE},globaldce",
     "lite2": f"ipsccp,globalopt,{LITE},deadargelim,{LITE},globaldce",

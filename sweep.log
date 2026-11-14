@@ -1,13 +1,15 @@
-real ops: 1394; dead with all skips open: 28
-dead when skipped alone: 652 (487 s)
-joint round 1: 514 proven, 138 left
-joint round 2: 10 proven, 128 left
-joint round 3: 2 proven, 126 left
-joint round 4: 1 proven, 125 left
-joint round 5: 0 proven, 125 left
-after one-at-a-time pass over leftovers: 629 proven, 23 left
+lite5: dead when skipped alone: 656 (379 s)
+lite5: joint round 1: 521 proven, 135 left
+lite5: joint round 2: 9 proven, 126 left
+lite5: joint round 3: 2 proven, 124 left
+lite5: joint round 4: 1 proven, 123 left
+lite5: joint round 5: 0 proven, 123 left
+lite5: 634 proven, 22 left (508 s)
+lite5: dead when skipped alone: 4 (706 s)
+lite5: joint round 1: 4 proven, 0 left
+lite5: 638 proven, 0 left (707 s)
 engine check: trials 1000 failures 0 trace_events 40697694 cycles_executed 24162916
-proven dead together: 629 of 1394 real ops; total 663 s
-hand-written mask on the same ops: 623; shared 611, only skip 18, only hand 12
-only skip: [('Local Anchor', 10), ('Local Jump If', 2), ('Set Local Regulator', 2), ('Adjust Local Regulator', 2), ('Local Jump If Not', 1), ('Global Jump If Not', 1)]
-only hand: [('Local Anchor', 4), ('Terminal', 2), ('Modulo', 1), ('Bitwise Xor', 1), ('Local Jump If', 1), ('Not Equal', 1)]
+proven dead together: 638 of 1394 real ops; total 714 s
+hand-written mask on the same ops: 623; shared 619, only skip 19, only hand 4
+only skip: [('Local Anchor', 10), ('Local Jump If', 2), ('Adjust Local Regulator', 2), ('Set Local Regulator', 2), ('Global Jump If', 1), ('Local Jump If Not', 1)]
+only hand: [('Local Anchor', 4)]
