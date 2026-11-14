@@ -57,11 +57,11 @@ static std::vector<uint64_t> run(const program_t & prog,
                                  const int seed,
                                  const int updates) {
   sgpl::tlrand.Reseed(seed);
-  BadRandom random{std::mt19937_64(seed * 7919 + 13)};
+  std::mt19937_64 random(seed * 7919 + 13);
   auto random_tag = [&]() {
-    tag_t tag = tags[random(tags.size())];
-    if (random(2)) {
-      for (int k = random(6); k > 0; --k) { tag.Toggle(random(64)); }
+    tag_t tag = tags[random() % tags.size()];
+    if (random() % 2) {
+      for (int k = random() % 6; k > 0; --k) { tag.Toggle(random() % 64); }
     }
     return tag;
   };
@@ -72,18 +72,18 @@ static std::vector<uint64_t> run(const program_t & prog,
   harness.init(prog, random);
   trace.clear();
   for (int update{}; update < updates; ++update) {
-    input_salt = random.engine();
+    input_salt = random();
     harness.perturb(random);
-    for (int k = random(3); k > 0; --k) { cpu.ForceLaunchCore(random_tag()); }
-    for (int k = random(3); k > 0; --k) {
+    for (int k = random() % 3; k > 0; --k) { cpu.ForceLaunchCore(random_tag()); }
+    for (int k = random() % 3; k > 0; --k) {
       const auto tag          = random_tag();
-      const size_t jump_table = random(2);
+      const size_t jump_table = random() % 2;
       registers_t registers;
-      for (auto & reg : registers) { reg = random.value(); }
+      for (auto & reg : registers) { reg = random_value(random); }
       if (cpu.TryLaunchCore(tag, jump_table)) { cpu.GetFreshestCore().SetRegisters(registers); }
     }
-    sgpl::execute_cpu<spec_t>(1 + random(24), cpu, prog, harness.peripheral);
-    if (random(3) == 0) { cpu.DecayGlobalRegulators(); }
+    sgpl::execute_cpu<spec_t>(1 + random() % 24, cpu, prog, harness.peripheral);
+    if (random() % 3 == 0) { cpu.DecayGlobalRegulators(); }
     trace.push_back(0xFEED0000 + update);
     trace.push_back(cpu.GetCyclesSinceConstruction());
     trace.push_back(cpu.GetNumBusyCores());

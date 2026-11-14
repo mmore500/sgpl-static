@@ -9,25 +9,21 @@
 #include <cstring>
 #include <random>
 
-struct BadRandom {
-  std::mt19937_64 engine;
-
-  uint64_t operator()(const uint64_t n) { return engine() % n; }
-
-  float value() {
-    switch ((*this)(6)) {
-      case 0: return 0.0f;
-      case 1: return 1.0f;
-      case 2: return static_cast<float>((*this)(8)) - 3.0f;
-      case 3: {
-        const uint32_t bits = engine();
-        float f;
-        std::memcpy(&f, &bits, sizeof(f));
-        return f;
-      }
-      default: return static_cast<float>(static_cast<double>((*this)(2000001)) / 1e6 - 1.0);
+// A register or state value: mostly ordinary fractions, sometimes a special
+// case (zero, one, a small integer, or raw bits such as NaN and infinity).
+inline float random_value(std::mt19937_64 & random) {
+  switch (random() % 6) {
+    case 0: return 0.0f;
+    case 1: return 1.0f;
+    case 2: return static_cast<float>(random() % 8) - 3.0f;
+    case 3: {
+      const uint32_t bits = random();
+      float f;
+      std::memcpy(&f, &bits, sizeof(f));
+      return f;
     }
+    default: return static_cast<float>(static_cast<double>(random() % 2000001) / 1e6 - 1.0);
   }
-};
+}
 
 #endif  // #ifndef SGPL_STATIC_TESTS_RANDOM_HPP_INCLUDE

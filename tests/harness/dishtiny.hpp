@@ -15,32 +15,32 @@ struct Harness {
   // set leaves [begin, end) of a state tree, each with probability 1/odds
   template <size_t... Leaf>
   static void randomize(readable_t & state,
-                        BadRandom & random,
+                        std::mt19937_64 & random,
                         const size_t begin,
                         const size_t end,
                         const size_t odds,
                         std::index_sequence<Leaf...>) {
     const auto set = [&](auto & leaf, const size_t index) {
-      if (index < begin || index >= end || random(odds)) { return; }
-      leaf = uitsl::clamp_cast<std::decay_t<decltype(leaf)>>(random.value());
+      if (index < begin || index >= end || random() % odds) { return; }
+      leaf = uitsl::clamp_cast<std::decay_t<decltype(leaf)>>(random_value(random));
     };
     (set(state.template GetByIndex<Leaf>(), Leaf), ...);
   }
 
   static void randomize(readable_t & state,
-                        BadRandom & random,
+                        std::mt19937_64 & random,
                         const size_t end,
                         const size_t odds) {
     randomize(state, random, 0, end, odds, std::make_index_sequence<readable_t::GetSize()>{});
   }
 
-  void init(const sgpl::Program<sgpl_static::spec_t> &, BadRandom & random) {
+  void init(const sgpl::Program<sgpl_static::spec_t> &, std::mt19937_64 & random) {
     randomize(peripheral.readable_state, random, readable_t::GetSize(), 1);
     randomize(peripheral.state_node_input.state, random, readable_t::GetSize(), 1);
   }
 
   // the host changes introspective state, and the neighbor's state
-  void perturb(BadRandom & random) {
+  void perturb(std::mt19937_64 & random) {
     randomize(peripheral.readable_state, random, num_introspective, 4);
     randomize(peripheral.state_node_input.state, random, readable_t::GetSize(), 4);
   }
