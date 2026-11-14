@@ -1,8 +1,8 @@
-"""One optimizer run: which of these skips are proven to make no difference?
+"""One optimizer run: which of these skips make no difference?
 
 A "skip" is the decision not to run an instruction. In the saved IR each
 instruction sits behind a skip() call; when the optimizer deletes that call,
-the skip is proven."""
+the skip holds."""
 
 import re
 import subprocess
@@ -11,8 +11,8 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
-def prove_skips(saved_ir, size, maybe, nopped, opt_flags):
-    """The skips among `maybe` that are proven together, given that the
+def resolve_skips(saved_ir, size, maybe, nopped, opt_flags):
+    """The skips among `maybe` that hold together, given that the
     positions in `nopped` are skipped already.
 
     Every position in `maybe` is made "maybe skipped" in the saved IR, and
@@ -32,6 +32,6 @@ def prove_skips(saved_ir, size, maybe, nopped, opt_flags):
     calls_left = [LITERAL.fullmatch(argument) for argument in SKIP.findall(out)]
     if not all(calls_left):
         # the optimizer merged skip() calls, so which ones are left is
-        # unknown: nothing is proven
+        # unknown: none of them holds
         return set()
     return set(maybe) - {int(match[1]) for match in calls_left}
