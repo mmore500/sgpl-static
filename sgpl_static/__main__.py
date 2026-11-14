@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import pathlib
+import random
 import re
 import shlex
 import shutil
@@ -129,6 +130,9 @@ def main():
     parser.add_argument("--max-passes", type=int, default=0,
                         help="stop after this many passes; 0 (default) "
                         "repeats until a pass proves nothing new")
+    parser.add_argument("--seed", type=int,
+                        help="shuffle the order conflicting skips are "
+                        "retried in (default: by position)")
     parser.add_argument("--jobs", type=int,
                         default=int(os.environ.get("SLURM_CPUS_PER_TASK", 0))
                         or os.cpu_count(),
@@ -188,12 +192,13 @@ def strip(args, holder, key, work):
     # Each pass retries everything still unproven on top of the passes before
     # it: some skips only hold once others are made. A pass that proves
     # nothing leaves nothing for the next one to build on.
+    rng = None if args.seed is None else random.Random(args.seed)
     proven, number = set(), 0
     while not args.max_passes or number < args.max_passes:
         number += 1
         todo = sorted(set(candidates) - proven)
         final = do_pass(
-            saved_ir, size, todo, proven, opt_flags, args.jobs, number
+            saved_ir, size, todo, proven, opt_flags, args.jobs, number, rng
         )
         if not final:
             break

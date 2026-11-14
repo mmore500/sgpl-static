@@ -11,10 +11,6 @@ on:
     - '*'
   workflow_dispatch:
 
-env:
-  # the suggested passes from the README: much quicker than the default
-  SUGGESTED_OPTFLAGS: '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
-
 jobs:
   test:
     name: test ${{ matrix.name }}
@@ -23,8 +19,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        # each case: strip a program in the container, then compare original
-        # and stripped in the real engine (tests/check.sh)
+        # each case: strip a program in the container with O2, compare the
+        # output with the expected one, then compare original and stripped in
+        # the real engine (tests/check.sh)
         - name: dishtiny
           harness: dishtiny
           program: tests/data/dishtiny-prq49-series16005-stint100.json
@@ -35,6 +32,7 @@ jobs:
         - name: symbulation
           harness: symbulation
           program: tests/data/symbulation-NotNandProgram100.json
+          expect_output: tests/data/symbulation-NotNandProgram100-stripped-O2.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
           peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
@@ -42,18 +40,11 @@ jobs:
         - name: symbulation jumps
           harness: symbulation
           program: tests/data/symbulation-jumps.json
+          expect_output: tests/data/symbulation-jumps-stripped-O2.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
           peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
-        - name: symbulation jumps, default passes
-          harness: symbulation
-          program: tests/data/symbulation-jumps.json
-          key: value0
-          project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
-          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
-          cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
-          default_passes: 1
     steps:
     - uses: actions/checkout@v4
     - name: Build image
@@ -64,7 +55,7 @@ jobs:
         --entrypoint /repo/tests/check.sh sgpl-static
         "${{ matrix.harness }}" "${{ matrix.program }}" "${{ matrix.key }}"
         "${{ matrix.project }}" "${{ matrix.peripheral }}" "${{ matrix.cxxflags }}"
-        "${{ matrix.default_passes && '' || env.SUGGESTED_OPTFLAGS }}"
+        "-passes=default<O2>"
 
   deploy-ghcr:
     name: Docker Image Deploy

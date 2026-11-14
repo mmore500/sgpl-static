@@ -56,6 +56,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--cxxflags` | flags for clang++, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for opt | `-passes=default<O2>` |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass proves nothing new | `0` |
+| `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 
 Suggested optimizer passes:
