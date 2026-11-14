@@ -4,6 +4,9 @@
 ![CI](https://github.com/mmore500/sgpl-static/actions/workflows/ci.yaml/badge.svg)
 ](https://github.com/mmore500/sgpl-static/actions)
 [
+![License](https://img.shields.io/github/license/mmore500/sgpl-static.svg)
+](https://github.com/mmore500/sgpl-static/blob/main/LICENSE)
+[
 ![GitHub stars](https://img.shields.io/github/stars/mmore500/sgpl-static.svg?style=round-square&logo=github&label=Stars&logoColor=white)](https://github.com/mmore500/sgpl-static)
 
 > [!WARNING]
@@ -11,6 +14,7 @@
 
 sgpl-static strips a [signalgp-lite](https://github.com/mmore500/signalgp-lite) program: it replaces instructions that cannot affect anything observable with nops. JSON in, JSON out.
 
+- Free software: MIT
 - Repository: <https://github.com/mmore500/sgpl-static>
 
 The program is written out as C++ that calls the project's real op functors, and compiled to LLVM IR once.
@@ -25,7 +29,7 @@ The result is a set proven dead together, not the largest possible one.
 ## Usage
 
 ```bash
-apptainer run docker://ghcr.io/mmore500/sgpl-static:latest \
+apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/dishtiny.json \
   --project https://github.com/mmore500/dishtiny@prq49 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/main/peripherals/dishtiny.hpp \
@@ -40,7 +44,7 @@ Each takes a local path or a URL.
 For Symbulation, which needs a few compiler settings:
 
 ```bash
-apptainer run docker://ghcr.io/mmore500/sgpl-static:latest \
+apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --program https://raw.githubusercontent.com/mmore500/sgpl-static/main/examples/symbulation.json \
   --project https://github.com/anyaevostinar/SymbulationEmp@main \
   --include Empirical/include \
@@ -101,7 +105,7 @@ The header can announce their targets with `jump_dests`; see the Symbulation hea
 The tool is the container image; there is nothing else to install.
 
 ```bash
-apptainer pull sgpl-static.sif docker://ghcr.io/mmore500/sgpl-static:latest
+apptainer pull sgpl-static.sif docker://ghcr.io/mmore500/sgpl-static:v0.1.0
 ```
 
 The image's filesystem is read-only under Apptainer, so scratch files go to `--workdir` or `$TMPDIR`.
@@ -114,6 +118,11 @@ On compute nodes without network access, pass `--project`, `--program` and `--pe
 - Local regulators are private to a core. After a core writes one, its later local jumps may land on any local anchor of the module.
 - Jump tables pick one match: the best score, first-inserted on ties (signalgp-lite's default selector).
 - The peripheral's own state may change between any two instructions.
+
+## Releases
+
+`bumpver update --patch` (or `--minor`, `--major`) updates the version in `sgpl_static/__init__.py` and this README, commits and tags.
+Pushing the tag publishes `ghcr.io/mmore500/sgpl-static:<tag>`.
 
 ## Testing
 

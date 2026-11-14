@@ -14,7 +14,7 @@ import tempfile
 import time
 import urllib.request
 
-from . import stage2
+from . import __version__, stage2
 from .sweep import log, sweep
 
 CPP = pathlib.Path(__file__).resolve().parent.parent / "cpp"
@@ -128,6 +128,7 @@ def main():
                         help="parallel opt runs (default: all cores)")
     parser.add_argument("--report", help="write a JSON report here")
     parser.add_argument("--workdir", help="scratch directory (default: temp)")
+    parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
     start = time.time()
