@@ -22,7 +22,7 @@ struct Harness {
                         std::index_sequence<Leaf...>) {
     const auto set = [&](auto & leaf, const size_t index) {
       if (index < begin || index >= end || random() % odds) { return; }
-      leaf = uitsl::clamp_cast<std::decay_t<decltype(leaf)>>(random_value(random));
+      leaf = uitsl::clamp_cast<std::decay_t<decltype(leaf)>>(BadRandom{}(random));
     };
     (set(state.template GetByIndex<Leaf>(), Leaf), ...);
   }

@@ -9,21 +9,24 @@
 #include <cstring>
 #include <random>
 
-// A register or state value: mostly ordinary fractions, sometimes a special
-// case (zero, one, a small integer, or raw bits such as NaN and infinity).
-inline float random_value(std::mt19937_64 & random) {
-  switch (random() % 6) {
-    case 0: return 0.0f;
-    case 1: return 1.0f;
-    case 2: return static_cast<float>(random() % 8) - 3.0f;
-    case 3: {
-      const uint32_t bits = random();
-      float f;
-      std::memcpy(&f, &bits, sizeof(f));
-      return f;
+// Stress-test values for registers and state, used like a standard
+// distribution: BadRandom{}(engine). A third of the draws are ordinary
+// fractions; the rest are awkward cases.
+struct BadRandom {
+  float operator()(std::mt19937_64 & random) const {
+    switch (random() % 6) {
+      case 0: return 0.0f;
+      case 1: return 1.0f;
+      case 2: return static_cast<float>(random() % 8) - 3.0f;  // small integer
+      case 3: {  // raw bits: NaN, infinity, huge and tiny values
+        const uint32_t bits = random();
+        float f;
+        std::memcpy(&f, &bits, sizeof(f));
+        return f;
+      }
+      default: return std::uniform_real_distribution<float>{-1.0f, 1.0f}(random);
     }
-    default: return static_cast<float>(static_cast<double>(random() % 2000001) / 1e6 - 1.0);
   }
-}
+};
 
 #endif  // #ifndef SGPL_STATIC_TESTS_RANDOM_HPP_INCLUDE

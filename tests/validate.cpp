@@ -79,7 +79,7 @@ static std::vector<uint64_t> run(const program_t & prog,
       const auto tag          = random_tag();
       const size_t jump_table = random() % 2;
       registers_t registers;
-      for (auto & reg : registers) { reg = random_value(random); }
+      for (auto & reg : registers) { reg = BadRandom{}(random); }
       if (cpu.TryLaunchCore(tag, jump_table)) { cpu.GetFreshestCore().SetRegisters(registers); }
     }
     sgpl::execute_cpu<spec_t>(1 + random() % 24, cpu, prog, harness.peripheral);
