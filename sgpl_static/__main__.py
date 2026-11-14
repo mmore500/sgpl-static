@@ -3,6 +3,7 @@ nops."""
 
 import argparse
 import json
+import logging
 import os
 import pathlib
 import random
@@ -18,7 +19,6 @@ import urllib.request
 
 from . import __version__
 from .do_pass import do_pass
-from .log import log
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
@@ -107,8 +107,9 @@ def find_program(document: typing.Any, key_path: str) -> tuple[dict, str]:
 
 
 def main() -> None:
-    log("warning: sgpl-static is experimental, it may produce incorrect results "
-        "and its interface is subject to change")
+    logging.basicConfig(format="%(message)s", level=logging.INFO)  # to stderr
+    logging.warning("warning: sgpl-static is experimental, it may produce incorrect "
+                    "results and its interface is subject to change")
     parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
     parser.add_argument("--program", default="-",
                         help="program or genome JSON: file, URL, or - for "
@@ -177,19 +178,19 @@ def strip(
     def gen(*command: object) -> str:
         return run(work / "sgpl_gen", *command, stdout=subprocess.PIPE).stdout
 
-    log("building the front end")
+    logging.info("building the front end")
     # the user's flags are relative to the project root
     run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
         "-o", work / "sgpl_gen", cwd=project)
     kinds = [line[0] for line in gen("ops", work / "program.json").splitlines()]
     gen("gencpp", work / "program.json", work / "program.cpp")
-    log("compiling the program")
+    logging.info("compiling the program")
     run("clang++", *flags, *COMPILE_FLAGS, work / "program.cpp",
         "-o", work / "program.ll", cwd=project)
 
     # ops and local anchors can go; global anchors and nops stay as they are
     candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
-    log(f"testing {len(candidates)} of {size} instructions")
+    logging.info(f"testing {len(candidates)} of {size} instructions")
     saved_ir = (work / "program.ll").read_text()
     opt_flags = shlex.split(args.optflags)
     # Each pass retries everything still unproven on top of the passes before
@@ -210,7 +211,7 @@ def strip(
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)
     holder[key] = json.loads(stripped)["value0"]
-    log(f"nopped {len(proven)} of {len(candidates)} candidates")
+    logging.info(f"nopped {len(proven)} of {len(candidates)} candidates")
 
 
 if __name__ == "__main__":

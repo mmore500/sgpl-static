@@ -1,9 +1,9 @@
 """One pass: propose skips, then finalize the proposals."""
 
+import logging
 import random
 
 from .finalize_skips import finalize_skips
-from .log import log
 from .propose_skips import propose_skips
 
 
@@ -27,5 +27,5 @@ def do_pass(
         saved_ir, size, proposed, proven, opt_flags,
         f"pass {number} finalize", rng,
     )
-    log(f"pass {number}: proposed {len(proposed)}, finalized {len(final)}")
+    logging.info(f"pass {number}: proposed {len(proposed)}, finalized {len(final)}")
     return final
