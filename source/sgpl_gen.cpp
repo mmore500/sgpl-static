@@ -1,7 +1,7 @@
 // Front end: reads a signalgp-lite program and writes it as C++ that calls the
 // library's real op functors, for the optimizer to reason about.
 //
-//   sgpl_gen ops <prog.json>             one line per instruction: kind, name
+//   sgpl_gen ops <prog.json>             one character per instruction: kind
 //   sgpl_gen gencpp <prog.json> <out>    the program as C++
 //   sgpl_gen apply <prog.json> <mask>    the program with mask's 1s nopped
 //
@@ -314,12 +314,10 @@ int main(const int argc, char ** argv) {
   program_t prog              = load_program(argv[2]);
   if (mode == "ops") {
     for (const auto & inst : prog) {
-      const std::string name = inst.GetOpName();
-      const char kind        = is_global(inst)            ? 'G'
-                             : is_local(inst)             ? 'L'
-                             : name.rfind("Nop-", 0) == 0 ? 'N'
-                                                          : 'O';
-      std::printf("%c\t%s\n", kind, name.c_str());
+      std::putchar(is_global(inst)                          ? 'G'
+                   : is_local(inst)                         ? 'L'
+                   : inst.GetOpName().rfind("Nop-", 0) == 0 ? 'N'
+                                                            : 'O');
     }
   } else if (mode == "gencpp" && argc == 4) {
     std::ofstream(argv[3]) << Generator(prog).program();

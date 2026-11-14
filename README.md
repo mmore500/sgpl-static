@@ -26,7 +26,7 @@ If it deletes an instruction's maybe-skip call, running or skipping that instruc
 
 Instructions are tested one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
 The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
-Passes repeat until one proves nothing new.
+Passes repeat until one makes no further nops.
 
 ## Usage
 

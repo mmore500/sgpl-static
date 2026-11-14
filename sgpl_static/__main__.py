@@ -184,7 +184,7 @@ def strip(
     # the user's flags are relative to the project root
     run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
         "-o", work / "sgpl_gen", cwd=project)
-    kinds = [line[0] for line in gen("ops", work / "program.json").splitlines()]
+    kinds = gen("ops", work / "program.json")
     gen("gencpp", work / "program.json", work / "program.cpp")
     logging.info("compiling the program")
     run("clang++", *flags, *COMPILE_FLAGS, work / "program.cpp",
