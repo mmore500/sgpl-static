@@ -25,6 +25,7 @@ jobs:
         - name: dishtiny
           harness: dishtiny
           program: tests/data/dishtiny-prq49-series16005-stint100.json
+          expect_output: tests/data/dishtiny-prq49-series16005-stint100-stripped-O2.json
           key: value0.program
           project: https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d
           peripheral: peripherals/dishtiny/prq49-as-of-2026-11-14.hpp
