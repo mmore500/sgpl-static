@@ -5,7 +5,8 @@ import re
 import subprocess
 
 DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
-KEPT = re.compile(r"call[^\n]*@skip\(i32 noundef (\d+)\)")
+SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
+LITERAL = re.compile(r"i32 noundef (\d+)")
 
 def kept(saved_ir, size, maybe, nopped, pipeline):
     """Positions whose skip() call survives. `maybe`: positions that may be
@@ -23,4 +24,9 @@ def kept(saved_ir, size, maybe, nopped, pipeline):
         ["opt", "-S", f"-passes={pipeline}"],
         input=text, capture_output=True, text=True, check=True,
     ).stdout
-    return set(map(int, KEPT.findall(out)))
+    surviving = [LITERAL.fullmatch(argument) for argument in SKIP.findall(out)]
+    if not all(surviving):
+        # the optimizer merged skip() calls, so their positions are unknown:
+        # count every position that may be skipped as surviving
+        return set(maybe)
+    return {int(match[1]) for match in surviving}

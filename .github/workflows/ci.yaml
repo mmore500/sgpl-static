@@ -43,6 +43,15 @@ jobs:
             --include Empirical/include
             --peripheral peripherals/symbulation.hpp
             --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
+        - name: symbulation jumps, default pipeline
+          harness: symbulation
+          default_pipeline: 1
+          args: >-
+            --program tests/data/symbulation_jumps.json --program-key value0
+            --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
+            --include Empirical/include
+            --peripheral peripherals/symbulation.hpp
+            --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
         - name: mock
           harness: mock
           args: >-
@@ -58,6 +67,7 @@ jobs:
     - name: Strip and check
       run: >-
         docker run --rm -v "$PWD:/repo" -e EXPECT_MASK=${{ matrix.expect_mask }}
+        -e DEFAULT_PIPELINE=${{ matrix.default_pipeline }}
         --entrypoint /repo/tests/check.sh
         sgpl-static ${{ matrix.harness }} ${{ matrix.args }}
 

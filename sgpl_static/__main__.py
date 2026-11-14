@@ -1,5 +1,8 @@
-"""Strip a signalgp-lite program: replace instructions that cannot affect
-anything observable with nops. JSON in, JSON out."""
+"""Strip dead instructions from a signalgp-lite program, replacing them with
+nops.
+
+Experimental: may produce incorrect results, and the interface is subject to
+change."""
 
 import argparse
 import json
@@ -57,17 +60,20 @@ def fetch_git(url, ref):
     CACHE.mkdir(parents=True, exist_ok=True)
     checkout = tempfile.mkdtemp(dir=CACHE)
     git = ["git", "-C", checkout]
-    for command in (
-        ["init", "-q"],
-        ["fetch", "-q", "--depth", "1", url, ref],
-        ["checkout", "-q", "FETCH_HEAD"],
-        ["submodule", "update", "-q", "--init", "--recursive", "--depth", "1"],
-    ):
-        subprocess.run(git + command, check=True)
     try:
+        for command in (
+            ["init", "-q"],
+            ["fetch", "-q", "--depth", "1", url, ref],
+            ["checkout", "-q", "FETCH_HEAD"],
+            ["submodule", "update", "-q", "--init", "--recursive",
+             "--depth", "1"],
+        ):
+            subprocess.run(git + command, check=True)
         os.rename(checkout, cached)
-    except OSError:  # another run cached it first
+    except BaseException:
         shutil.rmtree(checkout)
+        if not cached.exists():  # else another run cached it first
+            raise
     return cached
 
 
@@ -76,6 +82,7 @@ def fetch_source(location, into):
     if not is_url(location):
         return pathlib.Path(location).resolve()
     if location.endswith((".tar.gz", ".tgz")):
+        shutil.rmtree(into, ignore_errors=True)
         into.mkdir()
         archive, _ = urllib.request.urlretrieve(location)
         with tarfile.open(archive) as tar:
@@ -147,10 +154,6 @@ def main():
     flags = [f"-I{work}", f"-I{ROOT}/include", f"-I{project}",
              f"-I{sgpl[0].parents[2]}"]
     flags += [f"-I{project / include}" for include in args.include]
-    if shutil.which("mpicxx"):  # conduit's headers include <mpi.h>
-        flags += subprocess.run(
-            ["mpicxx", "--showme:compile"], capture_output=True, text=True
-        ).stdout.split()
     flags += args.cxxflag
     (work / "flags").write_text("\n".join(flags) + "\n")
 

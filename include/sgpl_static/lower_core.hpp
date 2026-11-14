@@ -119,6 +119,15 @@ public:
     index_jumped = true;
     jump_index = idx;
   }
+#else
+  template<typename Unsupported=void>
+  void JumpToIndex(size_t) noexcept {
+    static_assert(
+      std::is_same<Unsupported, int>::value,
+      "ops that set the program counter themselves are not supported in "
+      "programs with local anchors"
+    );
+  }
 #endif
   auto& GetLocalJumpTable() noexcept { return local; }
   auto& GetGlobalJumpTable(const size_t jt=0) noexcept { return global[jt]; }
