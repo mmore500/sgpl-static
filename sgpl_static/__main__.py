@@ -111,10 +111,10 @@ def main() -> None:
     logging.warning("warning: sgpl-static is experimental, it may produce incorrect "
                     "results and its interface is subject to change")
     parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
-    parser.add_argument("--program", default="-",
+    parser.add_argument("--input", default="-",
                         help="program or genome JSON: file, URL, or - for "
                         "stdin (default)")
-    parser.add_argument("--program-key", required=True, metavar="PATH",
+    parser.add_argument("--input-key", required=True, metavar="PATH",
                         help="where the instruction list is in the JSON, as "
                         "dot-separated keys, e.g. value0.program")
     parser.add_argument("--output", default="-",
@@ -125,13 +125,14 @@ def main() -> None:
     parser.add_argument("--peripheral", required=True,
                         help="peripheral header: file or URL")
     parser.add_argument("--cxxflags", default="",
-                        help="flags for clang++, run from the project root: "
+                        help="flags for clang++ to build naive IR, run from "
+                        "the project root: "
                         "e.g. '-Iinclude -std=c++20'")
     parser.add_argument("--optflags", default="-passes=default<O2>",
                         help="flags for opt (default: -passes=default<O2>)")
     parser.add_argument("--max-passes", type=int, default=0,
                         help="stop after this many passes; 0 (default) "
-                        "repeats until a pass proves nothing new")
+                        "repeats until a pass makes no further nops")
     parser.add_argument("--seed", type=int,
                         help="shuffle the order conflicting skips are "
                         "retried in (default: by position)")
@@ -148,8 +149,8 @@ def main() -> None:
             argv[i:i + 2] = [f"{argument}={argv[i + 1]}", ""]
     args = parser.parse_args(list(filter(None, argv)))
 
-    document = json.loads(read(args.program))
-    holder, key = find_program(document, args.program_key)
+    document = json.loads(read(args.input))
+    holder, key = find_program(document, args.input_key)
     with tempfile.TemporaryDirectory(prefix="sgpl-static-") as work:
         strip(args, holder, key, pathlib.Path(work))
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Strip a program, then compare original and stripped in the real engine.
-# usage: tests/check.sh <harness> <program> <program-key> <project>
+# usage: tests/check.sh <harness> <input> <input-key> <project>
 #          <peripheral> <cxxflags> [<optflags>]
 # env EXPECT_OUTPUT: file the stripped JSON must match exactly
 set -euo pipefail
@@ -10,7 +10,7 @@ optflags=(${7:+--optflags "$7"})
 work=$(mktemp -d)
 # -P: import the installed copy (PYTHONPATH), not this checkout
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
-python3 -P -m sgpl_static --program "$program" --program-key "$key" \
+python3 -P -m sgpl_static --input "$program" --input-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
   "${optflags[@]}" --output "$work/out.json"
 

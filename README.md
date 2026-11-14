@@ -32,30 +32,30 @@ Passes repeat until one proves nothing new.
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program genome.json \
-  --program-key value0.program \
+  --input genome.json \
+  --input-key value0.program \
   --project path/to/project \
   --peripheral peripheral.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
   --output stripped.json
 ```
 
-`--program` is a program or a genome that contains one; the output has the same shape.
-`--program-key` says where the instruction list is in that JSON, as dot-separated keys.
+`--input` is a program or a genome that contains one; the output has the same shape.
+`--input-key` says where the instruction list is in that JSON, as dot-separated keys.
 `--project` is the code the program runs in, fetched with its submodules.
 `--peripheral` says what is observable.
 `--cxxflags` go to clang++, which runs from the project root; they must put signalgp-lite's `include` on the include path.
 
 | Option | Meaning | Default |
 |---|---|---|
-| `--program` | program or genome JSON: file, URL, or `-` for stdin | `-` |
-| `--program-key` | where the instruction list is, e.g. `value0.program` | required |
+| `--input` | program or genome JSON: file, URL, or `-` for stdin | `-` |
+| `--input-key` | where the instruction list is, e.g. `value0.program` | required |
 | `--project` | directory, tarball URL, or `git-url@ref` | required |
 | `--peripheral` | peripheral header: file or URL | required |
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
-| `--cxxflags` | flags for clang++, e.g. `"-Iinclude -std=c++20"` | none |
+| `--cxxflags` | flags for clang++ to build naive IR, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for opt | `-passes=default<O2>` |
-| `--max-passes` | stop after this many passes; `0` repeats until a pass proves nothing new | `0` |
+| `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
 | `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
 
@@ -69,8 +69,8 @@ Suggested optimizer passes:
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/tests/data/dishtiny-prq49-series16005-stint100.json \
-  --program-key value0.program \
+  --input https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/tests/data/dishtiny-prq49-series16005-stint100.json \
+  --input-key value0.program \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/peripherals/dishtiny/prq49-as-of-2026-11-14.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
@@ -82,8 +82,8 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/tests/data/symbulation-NotNandProgram100.json \
-  --program-key value0 \
+  --input https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/tests/data/symbulation-NotNandProgram100.json \
+  --input-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/peripherals/symbulation/main-as-of-2026-11-14.hpp \
   --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
