@@ -17,6 +17,10 @@ a.out
 sgpl_gen
 validate
 
+# the tool's input and output; the test data stays tracked
+*.json
+!tests/data/*.json
+
 # container images
 *.sif
 

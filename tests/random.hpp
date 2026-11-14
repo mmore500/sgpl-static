@@ -9,7 +9,7 @@
 #include <cstring>
 #include <random>
 
-struct Random {
+struct BadRandom {
   std::mt19937_64 engine;
 
   uint64_t operator()(const uint64_t n) { return engine() % n; }

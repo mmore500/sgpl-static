@@ -57,7 +57,7 @@ static std::vector<uint64_t> run(const program_t & prog,
                                  const int seed,
                                  const int updates) {
   sgpl::tlrand.Reseed(seed);
-  Random random{std::mt19937_64(seed * 7919 + 13)};
+  BadRandom random{std::mt19937_64(seed * 7919 + 13)};
   auto random_tag = [&]() {
     tag_t tag = tags[random(tags.size())];
     if (random(2)) {

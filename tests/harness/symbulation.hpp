@@ -6,7 +6,7 @@
 struct Harness {
   sgpl_static::spec_t::peripheral_t peripheral;
 
-  void init(const sgpl::Program<sgpl_static::spec_t> & program, Random & random) {
+  void init(const sgpl::Program<sgpl_static::spec_t> & program, BadRandom & random) {
     for (const int dest : sgpl_static::jump_dests(program)) {
       peripheral.jump_table.push_back(dest);
     }
@@ -14,7 +14,7 @@ struct Harness {
   }
 
   // the world changes the organism's inputs and circumstances
-  void perturb(Random & random) {
+  void perturb(BadRandom & random) {
     for (int i{}; i < 4; ++i) { peripheral.input_buffer.push(random(5)); }
     peripheral.cpu_cycles_since_repro                        = random(4);
     peripheral.world.config.min_cycles_before_repro          = random(4);
