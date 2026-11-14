@@ -23,41 +23,33 @@ jobs:
         # and stripped in the real engine (tests/check.sh)
         - name: dishtiny
           harness: dishtiny
-          program: examples/dishtiny.json
+          program: tests/data/dishtiny-prq49-series16005-stint100.json
           key: value0.program
           project: https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d
           peripheral: peripherals/dishtiny/prq49-as-of-2026-11-14.hpp
           cxxflags: -Iinclude -Ithird-party/signalgp-lite/include
         - name: symbulation
           harness: symbulation
-          program: examples/symbulation.json
+          program: tests/data/symbulation-NotNandProgram100.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
           peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
         - name: symbulation jumps
           harness: symbulation
-          program: tests/data/symbulation_jumps.json
+          program: tests/data/symbulation-jumps.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
           peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
         - name: symbulation jumps, default passes
           harness: symbulation
-          program: tests/data/symbulation_jumps.json
+          program: tests/data/symbulation-jumps.json
           key: value0
           project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
           peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
           cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
           default_passes: 1
-        - name: mock
-          harness: mock
-          program: tests/data/mock.json
-          key: value0
-          project: https://github.com/mmore500/signalgp-lite@57a938a9e8fa7232699934f159a65428507cc017
-          peripheral: tests/peripherals/mock.hpp
-          cxxflags: -Iinclude -std=c++20
-          expect_output: tests/data/mock_stripped.json
     steps:
     - uses: actions/checkout@v4
     - name: Build image

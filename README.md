@@ -68,7 +68,7 @@ Suggested optimizer passes:
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/examples/dishtiny.json \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/tests/data/dishtiny-prq49-series16005-stint100.json \
   --program-key value0.program \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/peripherals/dishtiny/prq49-as-of-2026-11-14.hpp \
@@ -81,7 +81,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 
 ```bash
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
-  --program https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/examples/symbulation.json \
+  --program https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/tests/data/symbulation-NotNandProgram100.json \
   --program-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/60a8bf2529b36efc7dcdf2bf1d5140313378f63e/peripherals/symbulation/main-as-of-2026-11-14.hpp \
