@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_TESTS_PERIPHERALS_MOCK_HPP_INCLUDE
+#define SGPL_STATIC_TESTS_PERIPHERALS_MOCK_HPP_INCLUDE
+
 // Test peripheral: stand-ins for dishtiny's peripheral ops (same names and
 // register use, mock state). Runs on signalgp-lite master.
 #include <array>
@@ -134,3 +137,5 @@ struct spec_t : public sgpl::Spec<library_t, Peripheral> {
 };
 
 namespace sgpl_static { using spec_t = ::spec_t; }
+
+#endif // #ifndef SGPL_STATIC_TESTS_PERIPHERALS_MOCK_HPP_INCLUDE

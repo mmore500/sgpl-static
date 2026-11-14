@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_LOWER_FN_HPP_INCLUDE
+#define SGPL_STATIC_LOWER_FN_HPP_INCLUDE
+
 // Macros for generated programs.
 //
 // Module-per-function form: each module is a function whose parameters are
@@ -153,3 +156,5 @@ extern const unsigned char sgpl_enabled[SGPL_STATIC_PROGRAM_SIZE];
     target = gmatch(core.jump_tag, core.jump_jt); goto global_jump; \
   } \
   if (core.index_jumped) { target = core.jump_index; goto index_jump; }
+
+#endif // #ifndef SGPL_STATIC_LOWER_FN_HPP_INCLUDE

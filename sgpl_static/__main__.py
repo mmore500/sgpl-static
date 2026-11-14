@@ -17,7 +17,7 @@ import urllib.request
 from . import __version__, stage2
 from .sweep import log, sweep
 
-CPP = pathlib.Path(__file__).resolve().parent.parent / "cpp"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
 ) / "sgpl-static"
@@ -145,7 +145,7 @@ def main():
                   key=lambda path: len(path.parts))
     if not sgpl:
         sys.exit("sgpl-static: no signalgp-lite found in the project")
-    flags = [f"-std={args.std}", f"-I{work}", f"-I{CPP}", f"-I{project}",
+    flags = [f"-std={args.std}", f"-I{work}", f"-I{ROOT}/include", f"-I{project}",
              f"-I{sgpl[0].parents[2]}"]
     flags += [f"-I{project / include}" for include in args.include]
     if shutil.which("mpicxx"):  # conduit's headers include <mpi.h>
@@ -164,7 +164,7 @@ def main():
         return run(work / "sgpl_gen", *command, stdout=subprocess.PIPE).stdout
 
     log("building the front end")
-    run("clang++", *flags, "-DNDEBUG", "-w", "-O1", CPP / "sgpl_gen.cpp",
+    run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
         "-o", work / "sgpl_gen")
     kinds = [line[0] for line in gen("ops", work / "program.json").splitlines()]
     gen("gencpp", work / "program.json", work / "program.cpp")

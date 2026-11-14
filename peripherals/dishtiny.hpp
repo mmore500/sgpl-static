@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_PERIPHERALS_DISHTINY_HPP_INCLUDE
+#define SGPL_STATIC_PERIPHERALS_DISHTINY_HPP_INCLUDE
+
 // Peripheral for dishtiny (github.com/mmore500/dishtiny).
 //
 // dishtiny's real ops and real state layout are used unchanged. What the
@@ -66,3 +69,5 @@ struct spec_t : public sgpl::Spec<dish_t::op_library_t, Peripheral> {
 };
 
 } // namespace sgpl_static
+
+#endif // #ifndef SGPL_STATIC_PERIPHERALS_DISHTINY_HPP_INCLUDE

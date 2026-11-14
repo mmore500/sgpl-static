@@ -1,3 +1,7 @@
+#pragma once
+#ifndef SGPL_STATIC_TESTS_HARNESS_DISHTINY_HPP_INCLUDE
+#define SGPL_STATIC_TESTS_HARNESS_DISHTINY_HPP_INCLUDE
+
 // How to exercise peripherals/dishtiny.hpp in the engine.
 #include <utility>
 
@@ -43,3 +47,5 @@ struct Harness {
       sgpl_static::observe(peripheral.readable_state.Read(i));
   }
 };
+
+#endif // #ifndef SGPL_STATIC_TESTS_HARNESS_DISHTINY_HPP_INCLUDE

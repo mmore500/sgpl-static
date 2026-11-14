@@ -95,6 +95,7 @@ struct Discarded {
 ```
 
 To declare something a no-op, give it an empty body.
+The helpers are in [include/sgpl_static/shim.hpp](include/sgpl_static/shim.hpp).
 Start from [peripherals/dishtiny.hpp](peripherals/dishtiny.hpp) or [peripherals/symbulation.hpp](peripherals/symbulation.hpp).
 
 Ops that set the program counter themselves, as Symbulation's jumps do, are supported in programs without local anchors.

@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_LOWER_CORE_HPP_INCLUDE
+#define SGPL_STATIC_LOWER_CORE_HPP_INCLUDE
+
 // Analysis-only stand-in for sgpl::Core, used by generated programs.
 //
 // Generated code calls the library's real op functors, unmodified. Only the
@@ -131,3 +134,5 @@ public:
 using LCore = sgpl::Core<LSpec>;
 using LInst = sgpl::Instruction<LSpec>;
 extern const sgpl::Program<LSpec> PROG; // never read by the analysis core
+
+#endif // #ifndef SGPL_STATIC_LOWER_CORE_HPP_INCLUDE

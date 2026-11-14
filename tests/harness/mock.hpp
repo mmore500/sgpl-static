@@ -1,3 +1,7 @@
+#pragma once
+#ifndef SGPL_STATIC_TESTS_HARNESS_MOCK_HPP_INCLUDE
+#define SGPL_STATIC_TESTS_HARNESS_MOCK_HPP_INCLUDE
+
 // How to exercise tests/peripherals/mock.hpp in the engine.
 struct Harness {
   Peripheral peripheral;
@@ -15,3 +19,5 @@ struct Harness {
     for (const float v : peripheral.own) sgpl_static::observe(v);
   }
 };
+
+#endif // #ifndef SGPL_STATIC_TESTS_HARNESS_MOCK_HPP_INCLUDE

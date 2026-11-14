@@ -161,7 +161,7 @@ struct Generator {
   // is one endless loop. It becomes one function, where the optimizer can see
   // values that only feed themselves around the loop. Jumps are gotos.
   void emit_flat(std::ostream& o) {
-    o << "#define SGPL_STATIC_FLAT\n#include \"lower_fn.hpp\"\n"
+    o << "#define SGPL_STATIC_FLAT\n#include \"sgpl_static/lower_fn.hpp\"\n"
          "static void f_flat(int target, FPARAMS) {\n"
          "  FCORE\n  switch (target) {\n"; // launch: run the anchor itself
     for (const int g : anchors) o << "  case " << g << ": goto L" << g << ";\n";
@@ -190,7 +190,7 @@ struct Generator {
     for (const int d : jump_dest) o << d << ",";
     o << "};\n";
     if (!has_local_anchors) return emit_flat(o);
-    o << "#include \"lower_fn.hpp\"\n"
+    o << "#include \"sgpl_static/lower_fn.hpp\"\n"
       << "static void f_gdispatch(int target, FPARAMS);\n";
 
     std::ostringstream body;

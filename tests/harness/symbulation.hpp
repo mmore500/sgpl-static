@@ -1,3 +1,7 @@
+#pragma once
+#ifndef SGPL_STATIC_TESTS_HARNESS_SYMBULATION_HPP_INCLUDE
+#define SGPL_STATIC_TESTS_HARNESS_SYMBULATION_HPP_INCLUDE
+
 // How to exercise peripherals/symbulation.hpp in the engine.
 struct Harness {
   sgpl_static::spec_t::peripheral_t peripheral;
@@ -23,3 +27,5 @@ struct Harness {
   }
   void snapshot() const {}
 };
+
+#endif // #ifndef SGPL_STATIC_TESTS_HARNESS_SYMBULATION_HPP_INCLUDE

@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_PERIPHERALS_SYMBULATION_HPP_INCLUDE
+#define SGPL_STATIC_PERIPHERALS_SYMBULATION_HPP_INCLUDE
+
 // Peripheral for Symbulation's SGP mode (github.com/anyaevostinar/SymbulationEmp).
 //
 // Symbulation's real instructions are used unchanged. They talk to a
@@ -138,3 +141,5 @@ inline std::vector<int> jump_dests(const sgpl::Program<spec_t>& program) {
 }
 
 } // namespace sgpl_static
+
+#endif // #ifndef SGPL_STATIC_PERIPHERALS_SYMBULATION_HPP_INCLUDE

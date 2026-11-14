@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SGPL_STATIC_SHIM_HPP_INCLUDE
+#define SGPL_STATIC_SHIM_HPP_INCLUDE
+
 // Helpers for peripheral headers.
 //
 // A peripheral header stands in for whatever a program's ops talk to. Each
@@ -36,3 +39,5 @@ inline void observe(const T& value) {
 inline uint64_t input(const uint64_t key) { return sgpl_static_input(key); }
 
 } // namespace sgpl_static
+
+#endif // #ifndef SGPL_STATIC_SHIM_HPP_INCLUDE

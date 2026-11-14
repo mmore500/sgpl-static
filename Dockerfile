@@ -11,7 +11,8 @@ RUN apt-get update \
     && ln -s /usr/bin/clang++-18 /usr/local/bin/clang++ \
     && ln -s /usr/bin/opt-18 /usr/local/bin/opt
 
-COPY cpp /opt/sgpl-static/cpp
+COPY include /opt/sgpl-static/include
+COPY source /opt/sgpl-static/source
 COPY sgpl_static /opt/sgpl-static/sgpl_static
 
 ENTRYPOINT ["python3", "-m", "sgpl_static"]
