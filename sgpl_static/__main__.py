@@ -15,7 +15,8 @@ import tempfile
 import urllib.request
 
 from . import __version__
-from .sweep import log, sweep
+from .do_pass import do_pass
+from .log import log
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
@@ -181,11 +182,22 @@ def strip(args, holder, key, work):
 
     # ops and local anchors can go; global anchors and nops stay as they are
     candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
-    log(f"sweeping {len(candidates)} of {size} instructions")
-    proven = sweep(
-        (work / "program.ll").read_text(), candidates, size,
-        shlex.split(args.optflags), args.jobs, args.max_passes,
-    )
+    log(f"testing {len(candidates)} of {size} instructions")
+    saved_ir = (work / "program.ll").read_text()
+    opt_flags = shlex.split(args.optflags)
+    # Each pass retries everything still unproven on top of the passes before
+    # it: some skips only hold once others are made. A pass that proves
+    # nothing leaves nothing for the next one to build on.
+    proven, number = set(), 0
+    while not args.max_passes or number < args.max_passes:
+        number += 1
+        todo = sorted(set(candidates) - proven)
+        final = do_pass(
+            saved_ir, size, todo, proven, opt_flags, args.jobs, number
+        )
+        if not final:
+            break
+        proven |= final
     mask = "".join("1" if i in proven else "0" for i in range(size))
     stripped = gen("apply", work / "program.json", mask)
     holder[key] = json.loads(stripped)["value0"]
