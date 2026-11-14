@@ -1,5 +1,4 @@
-"""Set the skip switches in the saved IR and re-optimize with `opt`.
-A position is dead if its skip() call does not survive."""
+"""One optimizer run: which of these instructions are dead?"""
 
 import re
 import subprocess
@@ -8,10 +7,13 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
-def surviving_skips(saved_ir, size, maybe, nopped, opt_flags):
-    """Positions whose skip() call survives. `maybe`: positions that may be
-    skipped; `nopped`: positions always skipped; the rest always run.
-    `opt_flags`: flags for `opt`, which name the passes to run."""
+def find_dead(saved_ir, size, maybe, nopped, opt_flags):
+    """The positions among `maybe` that the optimizer shows to be dead,
+    given that those in `nopped` are already gone.
+
+    Every position in `maybe` is made "maybe skipped" in the saved IR, and
+    `opt` is run with `opt_flags`. A position is dead if the optimizer deleted
+    its skip() call: running or skipping it then makes no difference."""
     table = "".join(
         "\\02" if i in nopped else "\\01" if i in maybe else "\\00"
         for i in range(size)
@@ -26,7 +28,7 @@ def surviving_skips(saved_ir, size, maybe, nopped, opt_flags):
     ).stdout
     surviving = [LITERAL.fullmatch(argument) for argument in SKIP.findall(out)]
     if not all(surviving):
-        # the optimizer merged skip() calls, so their positions are unknown:
-        # count every position that may be skipped as surviving
-        return set(maybe)
-    return {int(match[1]) for match in surviving}
+        # the optimizer merged skip() calls, so which ones survive is unknown:
+        # call none of them dead
+        return set()
+    return set(maybe) - {int(match[1]) for match in surviving}

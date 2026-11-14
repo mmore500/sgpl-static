@@ -5,7 +5,7 @@ import sys
 
 import tqdm
 
-from .surviving_skips import surviving_skips
+from .find_dead import find_dead
 
 
 def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
@@ -13,30 +13,32 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
     `max_passes`: 0 for as many passes as it takes."""
     proven = set()
 
-    def run(maybe):
-        return surviving_skips(saved_ir, size, maybe, proven, opt_flags)
+    def dead(maybe):
+        return find_dead(saved_ir, size, maybe, proven, opt_flags)
 
-    def prove(name, todo):
-        """Add to `proven` what can be shown dead on top of it: each position
-        alone, then the candidates together, then the stragglers one by one."""
+    def propose_skips(name, todo):
+        """The positions of `todo` that are dead when skipped alone, on top
+        of what is proven."""
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
-            alone = pool.map(lambda i: i not in run({i}), todo)
+            alone = pool.map(lambda i: bool(dead({i})), todo)
             # a bar on stderr, redrawn at most every 20 seconds
             alone = tqdm.tqdm(alone, name, len(todo), mininterval=20)
-            remaining = {i for gone, i in zip(alone, todo) if gone}
-        log(f"dead when skipped alone: {len(remaining)}")
-        # what vanishes together is proven; nop it and retry the rest
-        while remaining:
-            gone = remaining - run(remaining)
+            proposed = {i for gone, i in zip(alone, todo) if gone}
+        log(f"{name}: proposed {len(proposed)}")
+        return proposed
+
+    def confirm_skips(name, proposed):
+        """Add to `proven` the proposals that are dead together: what vanishes
+        together is proven, and the rest are retried on top of it."""
+        while proposed:
+            gone = dead(proposed)
             proven.update(gone)
-            remaining -= gone
-            log(f"joint round: {len(gone)} proven, {len(remaining)} left")
+            proposed -= gone
             if not gone:
                 break
-        for i in sorted(remaining):
-            if i not in run({i}):
-                proven.add(i)
-        log(f"proven: {len(proven)}")
+        for i in sorted(proposed):  # stragglers, one by one
+            proven.update(dead({i}))
+        log(f"{name}: confirmed {len(proven)} in all")
 
     # Each pass retries everything still unproven on top of the passes before
     # it: some positions are only dead once others are gone. A pass that
@@ -45,7 +47,8 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
     while not max_passes or number < max_passes:
         number += 1
         already = len(proven)
-        prove(f"pass {number}", sorted(set(candidates) - proven))
+        name = f"pass {number}"
+        confirm_skips(name, propose_skips(name, sorted(set(candidates) - proven)))
         if len(proven) == already:
             break
     return proven
