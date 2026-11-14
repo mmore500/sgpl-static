@@ -12,6 +12,7 @@ work=$(mktemp -d)
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
 python3 -P -m sgpl_static --input "$program" --input-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
+  --solver opaque-skip \
   "${optflags[@]}" --output "$work/out.json"
 
 if [ -n "${EXPECT_OUTPUT:-}" ]; then

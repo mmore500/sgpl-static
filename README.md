@@ -37,6 +37,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --project path/to/project \
   --peripheral peripheral.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
+  --solver opaque-skip \
   --output stripped.json
 ```
 
@@ -55,7 +56,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
 | `--cxxflags` | flags for clang++ to build naive IR, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for clang optimizer to strip IR code | `-passes=default<O2>` |
-| `--solver` | how dead instructions are found; only `opaque-skip` for now | `opaque-skip` |
+| `--solver` | how dead instructions are found; only `opaque-skip` for now | required |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
 | `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
@@ -75,6 +76,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/peripherals/dishtiny/prq49-as-of-2026-11-14.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
+  --solver opaque-skip \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
   --output stripped.json
 ```
@@ -88,6 +90,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/d471ca5bc7e8aa243ca8aac6a7325c32586653b1/peripherals/symbulation/main-as-of-2026-11-14.hpp \
   --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
+  --solver opaque-skip \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
   --output stripped.json
 ```
