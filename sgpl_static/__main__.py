@@ -153,7 +153,7 @@ def main() -> None:
     document = json.loads(read(args.input))
     holder, key = find_program(document, args.input_key)
     with tempfile.TemporaryDirectory(prefix="sgpl-static-") as work:
-        strip(args, holder, key, pathlib.Path(work))
+        holder[key] = strip(args, holder[key], pathlib.Path(work))
 
     text = json.dumps(document, indent=4) + "\n"
     if args.output == "-":
@@ -162,13 +162,11 @@ def main() -> None:
         pathlib.Path(args.output).write_text(text)
 
 
-def strip(
-    args: argparse.Namespace, holder: dict, key: str, work: pathlib.Path
-) -> None:
-    """Nop the dead instructions of the program at holder[key], in place."""
-    size = len(holder[key])
+def strip(args: argparse.Namespace, program: list, work: pathlib.Path) -> list:
+    """`program` (an instruction list) with its dead instructions nopped."""
+    size = len(program)
     (work / "peripheral.hpp").write_text(read(args.peripheral))
-    (work / "program.json").write_text(json.dumps({"value0": holder[key]}))
+    (work / "program.json").write_text(json.dumps({"value0": program}))
     project = fetch_source(args.project, work / "project")
     flags = [f"-I{work}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
 
@@ -206,10 +204,9 @@ def strip(
         proven |= final
         if not final or number == args.max_passes:
             break
-    mask = "".join("1" if i in proven else "0" for i in range(size))
-    stripped = gen("apply", work / "program.json", mask)
-    holder[key] = json.loads(stripped)["value0"]
     logging.info(f"nopped {len(proven)} of {len(candidates)} candidates")
+    stripped = gen("apply", work / "program.json", *sorted(proven))
+    return json.loads(stripped)["value0"]
 
 
 if __name__ == "__main__":

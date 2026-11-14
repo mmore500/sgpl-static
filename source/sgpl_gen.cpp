@@ -3,7 +3,7 @@
 //
 //   sgpl_gen candidates <prog.json>      positions worth testing, one per line
 //   sgpl_gen gencpp <prog.json> <out>    the program as C++
-//   sgpl_gen apply <prog.json> <mask>    the program with mask's 1s nopped
+//   sgpl_gen apply <prog.json> [pos...]  the program with those positions nopped
 
 #include <cstdint>
 #include <cstdio>
@@ -307,7 +307,7 @@ void f_program(int entry, LPeripheral& p) {
 };
 
 int main(const int argc, char ** argv) {
-  if (argc < 3) { die("usage: sgpl_gen candidates|gencpp|apply <prog.json> [arg]"); }
+  if (argc < 3) { die("usage: sgpl_gen candidates|gencpp|apply <prog.json> [arg...]"); }
   const std::string_view mode = argv[1];
   program_t prog              = load_program(argv[2]);
   if (mode == "candidates") {
@@ -318,13 +318,11 @@ int main(const int argc, char ** argv) {
     }
   } else if (mode == "gencpp" && argc == 4) {
     std::ofstream(argv[3]) << Generator(prog).program();
-  } else if (mode == "apply" && argc == 4) {
-    const std::string_view mask = argv[3];
-    if (mask.size() != prog.size()) { die("mask length differs from program"); }
-    for (size_t i{}; i < prog.size(); ++i) {
-      if (mask[i] != '1') { continue; }
-      if (is_global(prog[i])) { die("mask nops a global anchor"); }
-      prog[i].NopOut();
+  } else if (mode == "apply") {
+    for (int a = 3; a < argc; ++a) {
+      const size_t pos = std::strtoull(argv[a], nullptr, 10);
+      if (pos >= prog.size() || is_global(prog[pos])) { die("apply: bad position"); }
+      prog[pos].NopOut();
     }
     cereal::JSONOutputArchive archive(std::cout);
     archive(prog);
