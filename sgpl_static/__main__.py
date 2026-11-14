@@ -1,8 +1,5 @@
 """Strip dead instructions from a signalgp-lite program, replacing them with
-nops.
-
-Experimental: may produce incorrect results, and the interface is subject to
-change."""
+nops."""
 
 import argparse
 import json
@@ -19,6 +16,8 @@ import urllib.request
 from . import __version__
 from .sweep import log, sweep
 
+WARNING = ("sgpl-static is experimental: it may produce incorrect results, and "
+           "its interface is subject to change")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
@@ -106,7 +105,9 @@ def find_program(document, key_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
+    parser = argparse.ArgumentParser(
+        prog="sgpl-static", description=__doc__, epilog=WARNING + "."
+    )
     parser.add_argument("--program", default="-",
                         help="program or genome JSON: file, URL, or - for "
                         "stdin (default)")
@@ -137,6 +138,7 @@ def main():
     parser.add_argument("--workdir", help="scratch directory (default: temp)")
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
+    log(f"warning: {WARNING}")
 
     document = json.loads(read(args.program))
     holder, key = find_program(document, args.program_key)

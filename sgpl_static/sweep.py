@@ -3,6 +3,8 @@
 import concurrent.futures
 import sys
 
+import tqdm
+
 from . import stage2
 
 
@@ -13,11 +15,13 @@ def sweep(saved_ir, candidates, size, pipeline, jobs):
     def run(maybe):
         return stage2.kept(saved_ir, size, maybe, proven, pipeline)
 
-    def prove(todo):
+    def prove(name, todo):
         """Add to `proven` what can be shown dead on top of it: each position
         alone, then the candidates together, then the stragglers one by one."""
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
             alone = pool.map(lambda i: i not in run({i}), todo)
+            # a bar on stderr, shown only when stderr is a terminal
+            alone = tqdm.tqdm(alone, name, len(todo), disable=None)
             remaining = {i for i, gone in zip(todo, alone) if gone}
         log(f"dead when skipped alone: {len(remaining)}")
         # what vanishes together is proven; nop it and retry the rest
@@ -35,8 +39,8 @@ def sweep(saved_ir, candidates, size, pipeline, jobs):
 
     # The second pass retries everything still unproven on top of the first:
     # some positions are only dead once others are gone.
-    prove(sorted(candidates))
-    prove(sorted(set(candidates) - proven))
+    prove("pass 1", sorted(candidates))
+    prove("pass 2", sorted(set(candidates) - proven))
     return proven
 
 

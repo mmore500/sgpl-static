@@ -8,7 +8,7 @@ ENV CPATH=/opt/mpi-include
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates clang-18 git libmetis-dev libopenmpi-dev llvm-18 \
-        python3 \
+        python3 python3-tqdm \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/clang++-18 /usr/local/bin/clang++ \
     && ln -s /usr/bin/opt-18 /usr/local/bin/opt \
