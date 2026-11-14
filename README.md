@@ -99,6 +99,8 @@ Run via apptainer (aka singularity):
 apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.1.0 --help
 ```
 
+Apptainer install instructions for Linux, Mac, and Windows are [here](https://apptainer.org/docs/admin/main/installation.html).
+
 ## AI Use
 
 Substantial portions of sgpl-static were prepared using agentic coding tools.
