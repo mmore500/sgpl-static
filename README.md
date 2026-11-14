@@ -63,6 +63,9 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:latest \
 | `--report` | write a JSON report: mask, counts, time | none |
 | `--workdir` | scratch directory, kept afterwards | a temporary directory |
 
+Git checkouts are cached by commit under `~/.cache/sgpl-static` (or `$XDG_CACHE_HOME`).
+Given a full commit hash, a cached project needs no network.
+
 A stronger `--pipeline` can prove more instructions dead, never wrong ones; `lite5` is the part of `O2` that mattered on the dishtiny example, at under half the time.
 A peripheral header fetched by URL is compiled and run, so pin it to a commit.
 

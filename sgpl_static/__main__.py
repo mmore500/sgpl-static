@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,9 @@ from . import stage2
 from .sweep import log, sweep
 
 CPP = pathlib.Path(__file__).resolve().parent.parent / "cpp"
+CACHE = pathlib.Path(
+    os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
+) / "sgpl-static"
 STAGE1_FLAGS = [
     "-DNDEBUG", "-w", "-O2", "-fno-math-errno", "-fno-jump-tables",
     "-fignore-exceptions", "-S", "-emit-llvm",
@@ -37,30 +41,49 @@ def read(location):
     return pathlib.Path(location).read_text()
 
 
+def fetch_git(url, ref):
+    """A checkout of `url` at `ref` with its submodules, cached by commit."""
+    if not re.fullmatch(r"[0-9a-f]{40}", ref):
+        listed = subprocess.run(
+            ["git", "ls-remote", url, ref or "HEAD"],
+            check=True, capture_output=True, text=True,
+        ).stdout.split()
+        if not listed:
+            sys.exit(f"sgpl-static: {url} has no branch or tag {ref!r}; "
+                     "for a commit, give the full hash")
+        ref = listed[0]
+    cached = CACHE / f"{pathlib.PurePosixPath(url).name}-{ref}"
+    if cached.exists():
+        return cached
+    CACHE.mkdir(parents=True, exist_ok=True)
+    checkout = tempfile.mkdtemp(dir=CACHE)
+    git = ["git", "-C", checkout]
+    for command in (
+        ["init", "-q"],
+        ["fetch", "-q", "--depth", "1", url, ref],
+        ["checkout", "-q", "FETCH_HEAD"],
+        ["submodule", "update", "-q", "--init", "--recursive", "--depth", "1"],
+    ):
+        subprocess.run(git + command, check=True)
+    try:
+        os.rename(checkout, cached)
+    except OSError:  # another run cached it first
+        shutil.rmtree(checkout)
+    return cached
+
+
 def fetch_source(location, into):
     """A source tree: a local directory, a tarball URL, or `git-url@ref`."""
     if not is_url(location):
         return pathlib.Path(location).resolve()
-    into.mkdir()
     if location.endswith((".tar.gz", ".tgz")):
+        into.mkdir()
         archive, _ = urllib.request.urlretrieve(location)
         with tarfile.open(archive) as tar:
             tar.extractall(into, filter="data")
         entries = list(into.iterdir())
         return entries[0] if len(entries) == 1 else into
-    url, _, ref = location.partition("@")
-    git = ["git", "-C", str(into)]
-    subprocess.run([*git, "init", "-q"], check=True)
-    subprocess.run(
-        [*git, "fetch", "-q", "--depth", "1", url, ref or "HEAD"], check=True
-    )
-    subprocess.run([*git, "checkout", "-q", "FETCH_HEAD"], check=True)
-    subprocess.run(
-        [*git, "submodule", "update", "-q", "--init", "--recursive",
-         "--depth", "1"],
-        check=True,
-    )
-    return into
+    return fetch_git(*location.partition("@")[::2])
 
 
 def find_program(document):
