@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# C++ and LLVM build products
+*.o
+*.ll
+*.bc
+a.out
+sgpl_gen
+validate
+
+# the tool's input and output; the test data stays tracked
+*.json
+!tests/data/*.json
+
+# container images
+*.sif
+
+# editors and operating systems
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

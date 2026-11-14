@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  push:
+    branches:
+    - main
+    tags:
+      - '*'
+  pull_request:
+    branches:
+    - '*'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        # each case: strip a program in the container with O2, compare the
+        # output with the expected one, then compare original and stripped in
+        # the real engine (tests/check.sh)
+        - name: dishtiny
+          harness: dishtiny
+          program: tests/data/dishtiny-prq49-series16005-stint100.json
+          expect_output: tests/data/dishtiny-prq49-series16005-stint100-stripped-O2.json
+          key: value0.program
+          project: https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d
+          peripheral: peripherals/dishtiny/prq49-as-of-2026-11-14.hpp
+          cxxflags: -Iinclude -Ithird-party/signalgp-lite/include
+        - name: symbulation
+          harness: symbulation
+          program: tests/data/symbulation-NotNandProgram100.json
+          expect_output: tests/data/symbulation-NotNandProgram100-stripped-O2.json
+          key: value0
+          project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
+          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
+          cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
+        - name: symbulation jumps
+          harness: symbulation
+          program: tests/data/symbulation-jumps.json
+          expect_output: tests/data/symbulation-jumps-stripped-O2.json
+          key: value0
+          project: https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
+          peripheral: peripherals/symbulation/main-as-of-2026-11-14.hpp
+          cxxflags: -Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build image
+      run: docker build -t sgpl-static .
+    - name: Strip and check
+      run: >-
+        docker run --rm -v "$PWD:/repo" -e EXPECT_OUTPUT=${{ matrix.expect_output }}
+        --entrypoint /repo/tests/check.sh sgpl-static
+        "${{ matrix.harness }}" "${{ matrix.program }}" "${{ matrix.key }}"
+        "${{ matrix.project }}" "${{ matrix.peripheral }}" "${{ matrix.cxxflags }}"
+        "-passes=default<O2>"
+
+  deploy-ghcr:
+    name: Docker Image Deploy
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Set Tags
+      run: |
+        if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          echo "TAGS=ghcr.io/mmore500/sgpl-static:latest,ghcr.io/mmore500/sgpl-static:${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        else
+          echo "TAGS=ghcr.io/mmore500/sgpl-static:latest" >> $GITHUB_ENV
+        fi
+    - name: Build and Push to GitHub Container Registry
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+        tags: ${{ env.TAGS }}
