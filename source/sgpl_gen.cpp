@@ -173,9 +173,13 @@ struct Generator {
       const auto raw = table.MatchRaw(inst.tag);
       return raw.size() ? static_cast<int>(table.GetVal(raw.front())) : -1;
     };
-    return fmt("%d, %d, %d, %d, %d, %lluULL, %s, %s, %d, %d)\n",
+    // what the instruction becomes when nopped; a global anchor never is
+    inst_t nopped = inst;
+    if (!is_global(inst)) { nopped.NopOut(); }
+    return fmt("%d, %d, %d, %d, %d, %d, %lluULL, %s, %s, %d, %d)\n",
                ps[j],
                int{inst.op_code},
+               int{nopped.op_code},
                int{inst.args[0]},
                int{inst.args[1]},
                int{inst.args[2]},

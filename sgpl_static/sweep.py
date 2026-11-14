@@ -5,7 +5,7 @@ import sys
 
 import tqdm
 
-from .optimize import surviving_skips
+from .surviving_skips import surviving_skips
 
 
 def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):

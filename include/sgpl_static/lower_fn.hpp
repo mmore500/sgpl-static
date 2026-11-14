@@ -100,20 +100,26 @@ extern const unsigned char sgpl_enabled[SGPL_STATIC_PROGRAM_SIZE];
 // an anchor's contribution to its table's identity token
 #define LTOK(POS, HASH) (LON(POS) ? (HASH) : 0ULL)
 
-#define FCALL_(SKIPPED, POS, OP, A, B, C, TAG, HJ, HLR, HG0, HG1) \
+// A skipped instruction runs what it would be replaced with: the nop that
+// makes the same number of RNG draws (NOP).
+#define FCALL_(SKIPPED, POS, OP, NOP, A, B, C, TAG, HJ, HLR, HG0, HG1) \
   tick(POS); \
   core.pc = POS; \
   core.terminated = core.loaded = false; \
   core.global_jumped = core.index_jumped = false; \
-    if (!(SKIPPED)) { \
-      LInst I; \
-      I.op_code = OP; I.args = {A, B, C}; I.tag.SetUInt64(0, TAG); \
+  { \
+    LInst I; \
+    I.op_code = OP; I.args = {A, B, C}; I.tag.SetUInt64(0, TAG); \
+    if (SKIPPED) { \
+      run_op<NOP>(core, I, p); \
+    } else { \
       core.h_jump = HJ; \
       core.local.pos = POS; core.local.h_raw = HLR; \
       core.global[0].pos = POS; core.global[0].h_raw = HG0; \
       core.global[1].pos = POS; core.global[1].h_raw = HG1; \
       run_op<OP>(core, I, p); \
-    }
+    } \
+  }
 #define FCALL(POS, ...) FCALL_(MAYBE_SKIP(POS), POS, __VA_ARGS__)
 #define FCALL_ALWAYS(POS, ...) FCALL_(false, POS, __VA_ARGS__)  // anchors
 
