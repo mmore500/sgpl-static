@@ -1,11 +1,21 @@
 """Which proposed skips hold together?"""
 
+import random
+
 import tqdm
 
 from .optimize_skips import optimize_skips
 
 
-def finalize_skips(saved_ir, size, proposed, proven, opt_flags, name, rng):
+def finalize_skips(
+    saved_ir: str,
+    size: int,
+    proposed: set[int],
+    proven: set[int],
+    opt_flags: list[str],
+    name: str,
+    rng: random.Random | None,
+) -> set[int]:
     """The skips in `proposed` that hold together, given that those in
     `proven` are made already. Proposals can conflict: two skips that each
     hold alone need not hold at once. `name` labels the progress bar.
@@ -13,7 +23,8 @@ def finalize_skips(saved_ir, size, proposed, proven, opt_flags, name, rng):
     Skips that do not hold with the rest are retried one by one, and which
     of two conflicting skips wins depends on the order: by position, or
     shuffled by `rng` if it is not None."""
-    final, left = set(), set(proposed)
+    final: set[int] = set()
+    left = set(proposed)
     # a bar on stderr counting proposals settled, redrawn at most every 20 s
     with tqdm.tqdm(
         desc=name, total=len(left), mininterval=20, disable=not left

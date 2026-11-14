@@ -3,5 +3,5 @@
 import sys
 
 
-def log(message):
+def log(message: str) -> None:
     print(message, file=sys.stderr, flush=True)

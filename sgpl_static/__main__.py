@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import typing
 import urllib.request
 
 from . import __version__
@@ -29,11 +30,11 @@ COMPILE_FLAGS = [
 ]
 
 
-def is_url(text):
+def is_url(text: str) -> bool:
     return text.startswith(("http://", "https://"))
 
 
-def read(location):
+def read(location: str) -> str:
     """Text of a local file or URL; `-` is stdin."""
     if location == "-":
         return sys.stdin.read()
@@ -43,7 +44,7 @@ def read(location):
     return pathlib.Path(location).read_text()
 
 
-def fetch_git(url, ref):
+def fetch_git(url: str, ref: str) -> pathlib.Path:
     """A checkout of `url` at `ref` with its submodules, cached by commit."""
     if not re.fullmatch(r"[0-9a-f]{40}", ref):
         listed = subprocess.run(
@@ -77,7 +78,7 @@ def fetch_git(url, ref):
     return cached
 
 
-def fetch_source(location, into):
+def fetch_source(location: str, into: pathlib.Path) -> pathlib.Path:
     """A source tree: a local directory, a tarball URL, or `git-url@ref`."""
     if not is_url(location):
         return pathlib.Path(location).resolve()
@@ -92,7 +93,7 @@ def fetch_source(location, into):
     return fetch_git(*location.partition("@")[::2])
 
 
-def find_program(document, key_path):
+def find_program(document: typing.Any, key_path: str) -> tuple[dict, str]:
     """The instruction list at `key_path` (dot-separated keys) in a program
     or genome document, as (container, key) so it can be replaced in place."""
     holder, key = {"": document}, ""
@@ -105,7 +106,7 @@ def find_program(document, key_path):
     return holder, key
 
 
-def main():
+def main() -> None:
     log("warning: sgpl-static is experimental, it may produce incorrect results "
         "and its interface is subject to change")
     parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
@@ -158,7 +159,9 @@ def main():
         pathlib.Path(args.output).write_text(text)
 
 
-def strip(args, holder, key, work):
+def strip(
+    args: argparse.Namespace, holder: dict, key: str, work: pathlib.Path
+) -> None:
     """Nop the dead instructions of the program at holder[key], in place."""
     size = len(holder[key])
     (work / "peripheral.hpp").write_text(read(args.peripheral))
@@ -166,12 +169,12 @@ def strip(args, holder, key, work):
     project = fetch_source(args.project, work / "project")
     flags = [f"-I{work}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
 
-    def run(*command, **kwargs):
+    def run(*command: object, **kwargs: typing.Any) -> subprocess.CompletedProcess:
         return subprocess.run(
             list(map(str, command)), check=True, text=True, **kwargs
         )
 
-    def gen(*command):
+    def gen(*command: object) -> str:
         return run(work / "sgpl_gen", *command, stdout=subprocess.PIPE).stdout
 
     log("building the front end")
@@ -193,7 +196,8 @@ def strip(args, holder, key, work):
     # it: some skips only hold once others are made. A pass that proves
     # nothing leaves nothing for the next one to build on.
     rng = None if args.seed is None else random.Random(args.seed)
-    proven, number = set(), 0
+    proven: set[int] = set()
+    number = 0
     while not args.max_passes or number < args.max_passes:
         number += 1
         todo = sorted(set(candidates) - proven)
