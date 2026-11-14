@@ -179,7 +179,9 @@ def main():
         args.jobs,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
-    (work / "mask.txt").write_text(mask + "\n")
+    mask_path = pathlib.Path(tempfile.gettempdir()) / "mask.txt"
+    mask_path.write_text(mask + "\n")
+    log(f"mask: {mask_path}")
     stripped = gen("apply", work / "program.json", mask)
     (work / "stripped.json").write_text(stripped)
     holder[key] = json.loads(stripped)["value0"]
