@@ -1,6 +1,3 @@
-# Empirical's style (github.com/devosoft/Empirical), less the options
-# clang-format 18 does not know. Includes are left in the order written:
-# the peripheral header and the RNG patch must come before signalgp-lite.
 ---
 Language:        Cpp
 AccessModifierOffset: -2       # private, etc, lines up with class name.
