@@ -129,7 +129,8 @@ def main() -> None:
                         "the project root: "
                         "e.g. '-Iinclude -std=c++20'")
     parser.add_argument("--optflags", default="-passes=default<O2>",
-                        help="flags for opt (default: -passes=default<O2>)")
+                        help="flags for clang optimizer to strip IR code "
+                        "(default: -passes=default<O2>)")
     parser.add_argument("--max-passes", type=int, default=0,
                         help="stop after this many passes; 0 (default) "
                         "repeats until a pass makes no further nops")
