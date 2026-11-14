@@ -5,7 +5,7 @@ import sys
 
 import tqdm
 
-from . import stage2
+from .optimize import surviving_skips
 
 
 def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
@@ -14,7 +14,7 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
     proven = set()
 
     def run(maybe):
-        return stage2.kept(saved_ir, size, maybe, proven, opt_flags)
+        return surviving_skips(saved_ir, size, maybe, proven, opt_flags)
 
     def prove(name, todo):
         """Add to `proven` what can be shown dead on top of it: each position

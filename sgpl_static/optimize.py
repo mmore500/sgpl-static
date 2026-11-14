@@ -1,4 +1,4 @@
-"""Stage 2: set the skip switches in the saved IR and re-optimize with `opt`.
+"""Set the skip switches in the saved IR and re-optimize with `opt`.
 A position is dead if its skip() call does not survive."""
 
 import re
@@ -8,7 +8,7 @@ DECL = re.compile(r"^@sgpl_enabled = .*$", re.M)
 SKIP = re.compile(r"call[^\n]*@skip\(([^)]*)\)")
 LITERAL = re.compile(r"i32 noundef (\d+)")
 
-def kept(saved_ir, size, maybe, nopped, opt_flags):
+def surviving_skips(saved_ir, size, maybe, nopped, opt_flags):
     """Positions whose skip() call survives. `maybe`: positions that may be
     skipped; `nopped`: positions always skipped; the rest always run.
     `opt_flags`: flags for `opt`, which name the passes to run."""

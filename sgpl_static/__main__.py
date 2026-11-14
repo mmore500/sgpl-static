@@ -21,7 +21,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
 ) / "sgpl-static"
-STAGE1_FLAGS = [
+COMPILE_FLAGS = [
     "-DNDEBUG", "-w", "-O2", "-fno-math-errno", "-fno-jump-tables",
     "-fignore-exceptions", "-S", "-emit-llvm",
 ]
@@ -175,13 +175,13 @@ def strip(args, holder, key, work):
         "-o", work / "sgpl_gen", cwd=project)
     kinds = [line[0] for line in gen("ops", work / "program.json").splitlines()]
     gen("gencpp", work / "program.json", work / "program.cpp")
-    log("stage 1: compiling the program")
-    run("clang++", *flags, *STAGE1_FLAGS, work / "program.cpp",
+    log("compiling the program")
+    run("clang++", *flags, *COMPILE_FLAGS, work / "program.cpp",
         "-o", work / "program.ll", cwd=project)
 
     # ops and local anchors can go; global anchors and nops stay as they are
     candidates = [i for i, kind in enumerate(kinds) if kind in "OL"]
-    log(f"stage 2: sweeping {len(candidates)} of {size} instructions")
+    log(f"sweeping {len(candidates)} of {size} instructions")
     proven = sweep(
         (work / "program.ll").read_text(), candidates, size,
         shlex.split(args.optflags), args.jobs, args.max_passes,

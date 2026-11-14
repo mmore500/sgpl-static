@@ -80,7 +80,7 @@ __attribute__((flatten, always_inline)) static inline void run_op(LCore & core,
 // it. If the optimizer deletes the skip() call, the choice cannot affect
 // anything observable, so the instruction is dead.
 //
-// Two-stage use: compile once with every skip behind a switch the optimizer
+// Used in two steps: compile once with every skip behind a switch the optimizer
 // cannot see, save the IR, then set the switches per variant and re-optimize.
 // switch values: 0 = always run, 1 = maybe skip, 2 = always skip (nopped)
 extern "C" {
