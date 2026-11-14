@@ -15,6 +15,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "peripheral.hpp"
@@ -31,6 +32,26 @@ using inst_t = sgpl::Instruction<spec_t>;
 using tag_t = spec_t::tag_t;
 using gjt_t = sgpl::JumpTable<spec_t, spec_t::global_matching_t>;
 using ljt_t = sgpl::JumpTable<spec_t, spec_t::local_matching_t>;
+
+// The generated code assumes a jump table lookup yields at most one match:
+// a selector S<Threshold, 1>, which signalgp-lite's RankedSelector is by
+// default.
+template<typename Depository> struct selector_of;
+template<
+  template<typename, typename, typename, typename, auto...> class Depository,
+  typename Val, typename Metric, typename Selector, typename Regulator,
+  auto... Caching
+> struct selector_of<Depository<Val, Metric, Selector, Regulator, Caching...>> {
+  using type = Selector;
+};
+template<typename Selector> struct picks_one : std::false_type {};
+template<template<typename, size_t> class S, typename Threshold>
+struct picks_one<S<Threshold, 1>> : std::true_type {};
+static_assert(
+  picks_one<selector_of<spec_t::global_matching_t>::type>::value
+  && picks_one<selector_of<spec_t::local_matching_t>::type>::value,
+  "jump table selectors must pick exactly one match"
+);
 
 // NopOut runs each op once to count its RNG draws; nothing is observed then
 void sgpl_static_observe(uint64_t) noexcept {}

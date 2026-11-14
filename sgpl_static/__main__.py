@@ -11,10 +11,9 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import time
 import urllib.request
 
-from . import __version__, stage2
+from . import __version__
 from .sweep import log, sweep
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -101,8 +100,9 @@ def find_program(document, key_path):
 
 def main():
     parser = argparse.ArgumentParser(prog="sgpl-static", description=__doc__)
-    parser.add_argument("--program", required=True,
-                        help="program or genome JSON: file, URL, or - for stdin")
+    parser.add_argument("--program", default="-",
+                        help="program or genome JSON: file, URL, or - for "
+                        "stdin (default)")
     parser.add_argument("--program-key", required=True, metavar="PATH",
                         help="where the instruction list is in the JSON, as "
                         "dot-separated keys, e.g. value0.program")
@@ -117,24 +117,20 @@ def main():
                         "project root; repeatable")
     parser.add_argument("--peripheral", required=True,
                         help="peripheral header: file or URL")
-    parser.add_argument("--pipeline", default="lite5",
-                        help="stage-2 passes: one of %s, or anything "
-                        "`opt -passes=` accepts (default: lite5)"
-                        % ", ".join(stage2.PIPELINES))
-    parser.add_argument("--std", default="c++17",
-                        help="C++ standard (default: c++17)")
+    parser.add_argument("--pipeline", default="default<O2>",
+                        help="stage-2 passes, as `opt -passes=` takes them "
+                        "(default: default<O2>)")
     parser.add_argument("--cxxflag", action="append", default=[],
-                        help="extra compiler flag; repeatable")
+                        help="extra compiler flag, e.g. -std=c++20; "
+                        "repeatable")
     parser.add_argument("--jobs", type=int,
                         default=int(os.environ.get("SLURM_CPUS_PER_TASK", 0))
                         or os.cpu_count(),
                         help="parallel opt runs (default: all cores)")
-    parser.add_argument("--report", help="write a JSON report here")
     parser.add_argument("--workdir", help="scratch directory (default: temp)")
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
-    start = time.time()
     document = json.loads(read(args.program))
     holder, key = find_program(document, args.program_key)
     size = len(holder[key])
@@ -148,7 +144,7 @@ def main():
                   key=lambda path: len(path.parts))
     if not sgpl:
         sys.exit("sgpl-static: no signalgp-lite found in the project")
-    flags = [f"-std={args.std}", f"-I{work}", f"-I{ROOT}/include", f"-I{project}",
+    flags = [f"-I{work}", f"-I{ROOT}/include", f"-I{project}",
              f"-I{sgpl[0].parents[2]}"]
     flags += [f"-I{project / include}" for include in args.include]
     if shutil.which("mpicxx"):  # conduit's headers include <mpi.h>
@@ -183,6 +179,7 @@ def main():
         args.jobs,
     )
     mask = "".join("1" if i in proven else "0" for i in range(size))
+    (work / "mask.txt").write_text(mask + "\n")
     stripped = gen("apply", work / "program.json", mask)
     (work / "stripped.json").write_text(stripped)
     holder[key] = json.loads(stripped)["value0"]
@@ -192,15 +189,6 @@ def main():
         sys.stdout.write(text)
     else:
         pathlib.Path(args.output).write_text(text)
-    if args.report:
-        pathlib.Path(args.report).write_text(json.dumps({
-            "instructions": size,
-            "candidates": len(candidates),
-            "nopped": len(proven),
-            "mask": mask,
-            "pipeline": args.pipeline,
-            "seconds": round(time.time() - start),
-        }, indent=4) + "\n")
     log(f"nopped {len(proven)} of {len(candidates)} candidates")
     if not args.workdir:
         shutil.rmtree(work)

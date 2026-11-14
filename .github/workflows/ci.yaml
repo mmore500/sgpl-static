@@ -34,7 +34,7 @@ jobs:
             --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
             --include Empirical/include
             --peripheral peripherals/symbulation.hpp
-            --std c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
+            --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
         - name: symbulation jumps
           harness: symbulation
           args: >-
@@ -42,14 +42,14 @@ jobs:
             --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91
             --include Empirical/include
             --peripheral peripherals/symbulation.hpp
-            --std c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
+            --cxxflag=-std=c++20 --cxxflag=-DUIT_VENDORIZE_EMP --cxxflag=-DTAG_NUM_BITS=32
         - name: mock
           harness: mock
           args: >-
             --program tests/data/mock.json --program-key value0
             --project https://github.com/mmore500/signalgp-lite@57a938a9e8fa7232699934f159a65428507cc017
             --peripheral tests/peripherals/mock.hpp
-            --std c++20
+            --cxxflag=-std=c++20
           expect_mask: tests/data/mock_mask.txt
     steps:
     - uses: actions/checkout@v4

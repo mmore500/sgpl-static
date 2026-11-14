@@ -6,11 +6,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 harness=$1; shift
 work=$(mktemp -d)
-python3 -m sgpl_static "$@" --workdir "$work" --output "$work/out.json" \
-  --report "$work/report.json"
-grep -v '"mask"' "$work/report.json"
+# the reduced pass list from the README: much quicker than the default
+python3 -m sgpl_static "$@" --pipeline "$(cat tests/lite5.txt)" \
+  --workdir "$work" --output "$work/out.json"
 if [ -n "${EXPECT_MASK:-}" ]; then
-  grep -q "\"$(cat "$EXPECT_MASK")\"" "$work/report.json"
+  cmp "$work/mask.txt" "$EXPECT_MASK"
 fi
 cp "tests/harness/$harness.hpp" "$work/harness.hpp"
 clang++ $(cat "$work/flags") -DNDEBUG -w -O2 tests/validate.cpp -o "$work/validate"
