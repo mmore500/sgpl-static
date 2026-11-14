@@ -5,7 +5,7 @@ import sys
 
 import tqdm
 
-from .check_skips import check_skips
+from .prove_skips import prove_skips
 
 
 def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
@@ -13,14 +13,14 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
     `max_passes`: 0 for as many passes as it takes."""
     proven = set()
 
-    def check(maybe):
-        return check_skips(saved_ir, size, maybe, proven, opt_flags)
+    def prove(maybe):
+        return prove_skips(saved_ir, size, maybe, proven, opt_flags)
 
     def propose_skips(name, todo):
-        """The positions of `todo` that are dead when skipped alone, on top
-        of what is proven."""
+        """The skips in `todo` that are proven when tried alone, on top of
+        what is proven already."""
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
-            alone = pool.map(lambda i: bool(check({i})), todo)
+            alone = pool.map(lambda i: bool(prove({i})), todo)
             # a bar on stderr, redrawn at most every 20 seconds
             alone = tqdm.tqdm(alone, name, len(todo), mininterval=20)
             proposed = {i for gone, i in zip(alone, todo) if gone}
@@ -28,16 +28,16 @@ def sweep(saved_ir, candidates, size, opt_flags, jobs, max_passes):
         return proposed
 
     def confirm_skips(name, proposed):
-        """Add to `proven` the proposals that are dead together: what vanishes
-        together is proven, and the rest are retried on top of it."""
+        """Add to `proven` the proposals that are proven together; the rest
+        are retried on top of those."""
         while proposed:
-            gone = check(proposed)
+            gone = prove(proposed)
             proven.update(gone)
             proposed -= gone
             if not gone:
                 break
         for i in sorted(proposed):  # stragglers, one by one
-            proven.update(check({i}))
+            proven.update(prove({i}))
         log(f"{name}: confirmed {len(proven)} in all")
 
     # Each pass retries everything still unproven on top of the passes before
