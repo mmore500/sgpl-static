@@ -16,7 +16,7 @@ import urllib.request
 from . import __version__
 from .sweep import log, sweep
 
-WARNING = ("sgpl-static is experimental: it may produce incorrect results, and "
+WARNING = ("sgpl-static is experimental, it may produce incorrect results and "
            "its interface is subject to change")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(

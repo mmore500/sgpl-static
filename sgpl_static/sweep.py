@@ -22,7 +22,7 @@ def sweep(saved_ir, candidates, size, pipeline, jobs):
             alone = pool.map(lambda i: i not in run({i}), todo)
             # a bar on stderr, redrawn at most every 20 seconds
             alone = tqdm.tqdm(alone, name, len(todo), mininterval=20)
-            remaining = {i for i, gone in zip(todo, alone) if gone}
+            remaining = {i for gone, i in zip(alone, todo) if gone}
         log(f"dead when skipped alone: {len(remaining)}")
         # what vanishes together is proven; nop it and retry the rest
         while remaining:
