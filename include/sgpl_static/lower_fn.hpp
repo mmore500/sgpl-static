@@ -10,43 +10,27 @@
 // module actually needs from its predecessors.
 
 // --- Analysis-only RNG, with no library change -----------------------------
-// Pre-defining the include guard skips sgpl's ThreadLocalRandom.hpp, and the
-// macro makes every `sgpl::tlrand` an RNG that lives in a temporary, seeded
-// from an opaque input. The real engine code still runs on it, but on local
-// state, so a draw whose result is unused leaves nothing behind.
-#define SGPL_UTILITY_THREADLOCALRANDOM_HPP_INCLUDE
-#include <array>
-#include <climits>
-#include <cmath>
+// The macro below makes every later `sgpl::tlrand` an RNG that lives in a
+// temporary, with state from an opaque input. The real engine code still runs
+// on it, but on local state, so a draw whose result is unused leaves nothing
+// behind.
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <ctime>
-#include <iostream>
 #include <iterator>
-#include <limits>
-#include <string>
-#include <vector>
-#if __has_include("sgpl/../../third-party/conduit/include/uit_emp/math/Random.hpp")
-#include "sgpl/../../third-party/conduit/include/uit_emp/math/Random.hpp"
+#include <type_traits>
 
-namespace sgpl_static {
-  using random_t = uit_emp::Random;
-}
-#else  // older signalgp-lite: Empirical directly
-#include "sgpl/../../third-party/Empirical/include/emp/math/Random.hpp"
+#include "sgpl/utility/ThreadLocalRandom.hpp"
 
-namespace sgpl_static {
-  using random_t = emp::Random;
-}
-#endif
 extern "C" {
 __attribute__((pure)) uint64_t rand_state(int site, int word) noexcept;
 }
 
 namespace sgpl {
   struct AnalysisRng {
-    sgpl_static::random_t rand{1};
+    // the engine this signalgp-lite uses, whichever that is
+    using random_t = std::decay_t<decltype(tlrand.Get())>;
+    random_t rand{1};
 
     // Every word of the engine's state is an opaque input. Seeding through the
     // constructor is NOT enough: it takes a 31-bit seed, and the first draw
@@ -60,7 +44,7 @@ namespace sgpl {
       std::memcpy(static_cast<void *>(&rand), words, sizeof(rand));
     }
 
-    sgpl_static::random_t & Get() { return rand; }
+    random_t & Get() { return rand; }
 
     std::byte GetByte() { return std::byte(rand.GetUInt(256)); }
   };
