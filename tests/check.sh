@@ -3,6 +3,7 @@
 # usage: tests/check.sh <harness> <input> <input-key> <project>
 #          <peripheral> <cxxflags> [<optflags>]
 # env EXPECT_OUTPUT: file the stripped JSON must match exactly
+# env SOLVER: the solver to use (default opaque-skip)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 harness=$1 program=$2 key=$3 project=$4 peripheral=$5 cxxflags=$6
@@ -12,7 +13,7 @@ work=$(mktemp -d)
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
 python3 -P -m sgpl_static --input "$program" --input-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
-  --solver opaque-skip \
+  --solver "${SOLVER:-opaque-skip}" \
   "${optflags[@]}" --output "$work/out.json"
 
 if [ -n "${EXPECT_OUTPUT:-}" ]; then

@@ -2,6 +2,7 @@
 nops."""
 
 import argparse
+import functools
 import itertools
 import json
 import logging
@@ -20,13 +21,25 @@ import urllib.request
 
 from . import __version__
 from .do_pass import do_pass
+from .finalize_skips import finalize_skips
+from .propose_skips import propose_skips
+from .propose_strided_skips import propose_strided_skips
+from .split_skips import split_skips
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
 ) / "sgpl-static"
-# how one pass finds dead instructions, by name
-SOLVERS = {"opaque-skip": do_pass}
+# a solver is how one pass proposes skips and how it finalizes them
+Step = typing.Callable[..., set[int]]
+SOLVERS: dict[str, tuple[Step, Step]] = {
+    # each skip alone, then together with one-by-one retries: exhaustive
+    "opaque-skip": (propose_skips, finalize_skips),
+    # spaced-out groups, then split and retry: far fewer optimizer runs
+    "stride67-split": (
+        functools.partial(propose_strided_skips, strides=(6, 7)), split_skips
+    ),
+}
 COMPILE_FLAGS = [
     "-DNDEBUG", "-w", "-O2", "-fno-math-errno", "-fno-jump-tables",
     "-fignore-exceptions", "-S", "-emit-llvm",
@@ -199,11 +212,13 @@ def strip(args: argparse.Namespace, program: list, work: pathlib.Path) -> list:
     # it: some skips only hold once others are made. A pass that proves
     # nothing leaves nothing for the next one to build on.
     rng = None if args.seed is None else random.Random(args.seed)
+    propose, finalize = SOLVERS[args.solver]
     proven: set[int] = set()
     for number in itertools.count(1):
         todo = sorted(set(candidates) - proven)
-        final = SOLVERS[args.solver](
-            saved_ir, size, todo, proven, opt_flags, args.jobs, number, rng
+        final = do_pass(
+            propose, finalize, saved_ir, size, todo, proven, opt_flags,
+            args.jobs, number, rng,
         )
         proven |= final
         if not final or number == args.max_passes:

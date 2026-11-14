@@ -28,6 +28,12 @@ Instructions are tested all at once and then, for those not yet found dead, one 
 The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
 Passes repeat until one makes no further nops.
 
+`--solver` picks how a pass does this.
+`opaque-skip` is the one described above, which tests every remaining instruction alone.
+`stride67-split` tests instructions in spaced-out groups instead (every 6th, then every 7th), since an instruction's deadness mostly depends on its neighbours.
+It confirms what the groups find by trying them together, then splitting what is left in two and retrying each half.
+It needs far fewer optimizer runs, but may find slightly fewer dead instructions or a different valid set.
+
 ## Usage
 
 ```bash
@@ -56,7 +62,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
 | `--cxxflags` | flags for clang++ to build naive IR, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for clang optimizer to strip IR code | `-passes=default<O2>` |
-| `--solver` | how dead instructions are found; only `opaque-skip` for now | required |
+| `--solver` | how dead instructions are found: `opaque-skip` or `stride67-split` | required |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
 | `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
