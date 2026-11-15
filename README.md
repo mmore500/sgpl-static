@@ -17,16 +17,19 @@ sgpl-static strips dead instructions from a [signalgp-lite](https://github.com/m
 - Free software: MIT
 - Repository: <https://github.com/mmore500/sgpl-static>
 
-An instruction is dead if it can never run, or if it runs but nothing it computes can ever reach anything observable.
-Dead instructions are found with the clang/LLVM optimizer.
-The program is translated to C++ that calls the project's real op functors in program order, and compiled to LLVM IR.
+The objective of this project is to reduce the workload of "nopout" experiments by using clang's optimizer for static analysis to preemptively strip provably dead code out of evolved programs (i.e.,  unreachable or provably inconsequential instructions).
+
+## Implementation
+
+Behind the scenes, the program is translated to a C++ file calling the program's op functors in instruction order, and compiled to LLVM IR.
+Dead instructions are then found using the LLVM optimizer.
 
 Every instruction is gated by an opaque "maybe skip" variable.
 If the optimizer elides an instruction's "maybe skip" check, running or skipping that instruction makes no observable difference.
 Thus, the instruction can be considered dead and safely replaced with nop.
 
 Instructions are tested all at once and then, for those not yet found dead, individually (pass 1).
-Those found dead are confirmed together, and then permanently eliminated.
+Instructions found dead are pooled together for confirmation, and then permanently eliminated.
 Remaining instructions may then be tested again (pass 2), since removing instructions can make others dead.
 Passes repeat until no further nops are found, or maximum passes is reached.
 
