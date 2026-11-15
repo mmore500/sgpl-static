@@ -25,8 +25,13 @@ The optimizer then does its ordinary dead-code elimination.
 If it deletes an instruction's maybe-skip call, running or skipping that instruction makes no observable difference, so the instruction is dead.
 
 Instructions are tested all at once and then, for those not yet found dead, one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
-The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
-Passes repeat until one makes no further nops.
+The remaining instructions are tested again (pass 2), since removing instructions can make others dead.
+Passes repeat until one finds no further nops, or maximum passes is reached.
+
+`--solver` picks how a pass does this.
+Unlike naive `opaque-skip`, `stride711-split` tests instructions in spaced-out groups (every 7th, then every 11th).
+Proposed skips sets are then tried together, with proposed skips that are not accepted recursively split and retried.
+This solver substantially reduces necessary optimizer runs, while producing comparable results.
 
 ## Usage
 
@@ -37,7 +42,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
   --project path/to/project \
   --peripheral peripheral.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
-  --solver opaque-skip \
+  --solver stride711-split \
   --output stripped.json
 ```
 
@@ -56,7 +61,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
 | `--cxxflags` | flags for clang++ to build naive IR, e.g. `"-Iinclude -std=c++20"` | none |
 | `--optflags` | flags for clang optimizer to strip IR code | `-passes=default<O2>` |
-| `--solver` | how dead instructions are found; only `opaque-skip` for now | required |
+| `--solver` | how dead instructions are found: `opaque-skip` or `stride711-split` | required |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
 | `--seed` | shuffle the order in which conflicting skips are retried | by position |
 | `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
@@ -76,7 +81,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/380be308d15554931d4dcfa476022eff300573ee/peripherals/dishtiny/prq49-as-of-2026-11-14.hpp \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
-  --solver opaque-skip \
+  --solver stride711-split \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
   --output stripped.json
 ```
@@ -90,7 +95,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
   --peripheral https://raw.githubusercontent.com/mmore500/sgpl-static/380be308d15554931d4dcfa476022eff300573ee/peripherals/symbulation/main-as-of-2026-11-14.hpp \
   --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
-  --solver opaque-skip \
+  --solver stride711-split \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
   --output stripped.json
 ```
