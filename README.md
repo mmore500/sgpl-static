@@ -21,7 +21,7 @@ The objective of this project is to reduce the workload of "nopout" experiments 
 
 ## Implementation
 
-Behind the scenes, the program is translated to a C++ file calling the program's op functors in instruction order, and compiled to LLVM IR.
+Behind the scenes, the input signalgp-lite program is translated to C++ source calling the program's op functors in instruction order, and compiled to LLVM IR.
 Dead instructions are then found using the LLVM optimizer.
 
 Every instruction is gated by an opaque "maybe skip" variable.
