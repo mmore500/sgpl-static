@@ -51,12 +51,6 @@ singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.2 \
   --output stripped.json
 ```
 
-`--input` is a program or a genome that contains one; the output has the same shape.
-`--input-key` says where the instruction list is in that JSON, as dot-separated keys.
-`--project` is the code the program runs in, fetched with its submodules.
-`--peripheral` says what is observable.
-`--cxxflags` go to clang++, which runs from the project root; they must put signalgp-lite's `include` on the include path.
-
 | Option | Meaning | Default |
 |---|---|---|
 | `--input` | program or genome JSON: file, URL, or `-` for stdin | `-` |
@@ -68,8 +62,8 @@ singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.2 \
 | `--optflags` | flags for clang optimizer to strip IR code | `-passes=default<O2>` |
 | `--solver` | how dead instructions are found: `opaque-skip` or `stride711-split` | required |
 | `--max-passes` | stop after this many passes; `0` repeats until a pass makes no further nops | `0` |
-| `--seed` | shuffle the order in which conflicting skips are retried | by position |
-| `--jobs` | optimizer runs at once | `SLURM_CPUS_PER_TASK`, else all cores |
+| `--seed` | shuffle the order in which conflicting skips are retried | none |
+| `--jobs` | how many optimizer trials to dispatch in parallel | `SLURM_CPUS_PER_TASK`, else all cores |
 
 Suggested optimizer passes:
 
