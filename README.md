@@ -29,10 +29,9 @@ The remaining instructions are tested again with those gone (pass 2), since remo
 Passes repeat until one makes no further nops.
 
 `--solver` picks how a pass does this.
-`opaque-skip` is the one described above, which tests every remaining instruction alone.
-`stride711-split` tests instructions in spaced-out groups instead (every 7th, then every 11th), since an instruction's deadness mostly depends on its neighbours.
-It confirms what the groups find by trying them together, then splitting what is left in two and retrying each half.
-It needs far fewer optimizer runs, but is not exhaustive: it may find slightly fewer dead instructions, or a different valid set.
+`stride711-split` tests instructions in spaced-out groups instead (every 7th, then every 11th).
+Proposed skips sets are then tried together, with proposed skips that are not accepted recursively split and retried.
+This solver substantially reduces necessary optimizer runs, while producing comparable results.
 
 ## Usage
 
