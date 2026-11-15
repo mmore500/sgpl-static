@@ -23947,7 +23947,7 @@
                 ]
             },
             {
-                "operation": "Read Own State",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 6,
                     "value1": 4,
@@ -23956,20 +23956,8 @@
                 "bitstring": "1110100101011010110000110001001000111000001100011010100011011011",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "6"
-                    },
-                    {
                         "key": "summary",
-                        "value": "a = state"
-                    },
-                    {
-                        "key": "target",
-                        "value": "dish2::NeighborKinGroupWillExpire"
-                    },
-                    {
-                        "key": "target index",
-                        "value": "1"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -24004,7 +23992,7 @@
                 ]
             },
             {
-                "operation": "Terminal",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 5,
                     "value1": 1,
@@ -24013,16 +24001,8 @@
                 "bitstring": "1001011010100010111010101100000010110100110001001000001110001110",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "5"
-                    },
-                    {
                         "key": "summary",
-                        "value": "a = value"
-                    },
-                    {
-                        "key": "value",
-                        "value": "0.176847"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -24327,7 +24307,7 @@
                 ]
             },
             {
-                "operation": "Write Own State",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 0,
                     "value1": 7,
@@ -24336,20 +24316,8 @@
                 "bitstring": "0011010111000101010011001011011001100010011000010001010001010001",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "0"
-                    },
-                    {
                         "key": "summary",
-                        "value": "if b, state = a"
-                    },
-                    {
-                        "key": "target",
-                        "value": "dish2::NopState"
-                    },
-                    {
-                        "key": "target index",
-                        "value": "1"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -24609,7 +24577,7 @@
                 ]
             },
             {
-                "operation": "Multiply Own State",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 0,
                     "value1": 5,
@@ -24618,20 +24586,8 @@
                 "bitstring": "0011010001111111000100100011001011101111011000000110100101001111",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "0"
-                    },
-                    {
                         "key": "summary",
-                        "value": "state *= a"
-                    },
-                    {
-                        "key": "target",
-                        "value": "dish2::TransientNopState"
-                    },
-                    {
-                        "key": "target index",
-                        "value": "1"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -24936,7 +24892,7 @@
                 ]
             },
             {
-                "operation": "Write Own State",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 3,
                     "value1": 6,
@@ -24945,20 +24901,8 @@
                 "bitstring": "1100000101000001101001010101111000110011000001011010010111101011",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "3"
-                    },
-                    {
                         "key": "summary",
-                        "value": "if b, state = a"
-                    },
-                    {
-                        "key": "target",
-                        "value": "dish2::SpawnRequest"
-                    },
-                    {
-                        "key": "target index",
-                        "value": "0"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -25263,7 +25207,7 @@
                 ]
             },
             {
-                "operation": "Terminal",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 1,
                     "value1": 0,
@@ -25272,16 +25216,8 @@
                 "bitstring": "0010100110010100110110111010111111001110111010000101111001100111",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "1"
-                    },
-                    {
                         "key": "summary",
-                        "value": "a = value"
-                    },
-                    {
-                        "key": "value",
-                        "value": "-3.24945"
+                        "value": "perform no operation"
                     }
                 ]
             },
@@ -25316,7 +25252,7 @@
                 ]
             },
             {
-                "operation": "Send Intra-Cell Message",
+                "operation": "Nop-0",
                 "args": {
                     "value0": 6,
                     "value1": 4,
@@ -25325,20 +25261,8 @@
                 "bitstring": "1110010000001001110000110001000010001111011110000000011011100101",
                 "descriptors": [
                     {
-                        "key": "argument a",
-                        "value": "6"
-                    },
-                    {
                         "key": "summary",
-                        "value": "if a, send message another cardinal within cell"
-                    },
-                    {
-                        "key": "tag bits",
-                        "value": "1110010000001001110000110001000010001111011110000000011011100101"
-                    },
-                    {
-                        "key": "tag moniker",
-                        "value": "strict wapiti"
+                        "value": "perform no operation"
                     }
                 ]
             },

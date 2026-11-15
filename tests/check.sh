@@ -1,19 +1,18 @@
 #!/bin/bash
 # Strip a program, then compare original and stripped in the real engine.
 # usage: tests/check.sh <harness> <input> <input-key> <project>
-#          <peripheral> <cxxflags> [<optflags>]
+#          <peripheral> <cxxflags> <solver> [<optflags>]
 # env EXPECT_OUTPUT: file the stripped JSON must match exactly
-# env SOLVER: the solver to use (default opaque-skip)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-harness=$1 program=$2 key=$3 project=$4 peripheral=$5 cxxflags=$6
-optflags=(${7:+--optflags "$7"})
+harness=$1 program=$2 key=$3 project=$4 peripheral=$5 cxxflags=$6 solver=$7
+optflags=(${8:+--optflags "$8"})
 work=$(mktemp -d)
 # -P: import the installed copy (PYTHONPATH), not this checkout
 export PYTHONPATH="${PYTHONPATH:-$PWD}"
 python3 -P -m sgpl_static --input "$program" --input-key "$key" \
   --project "$project" --peripheral "$peripheral" --cxxflags "$cxxflags" \
-  --solver "${SOLVER:-opaque-skip}" \
+  --solver "$solver" \
   "${optflags[@]}" --output "$work/out.json"
 
 if [ -n "${EXPECT_OUTPUT:-}" ]; then

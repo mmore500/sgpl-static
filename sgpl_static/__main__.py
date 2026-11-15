@@ -36,8 +36,8 @@ SOLVERS: dict[str, tuple[Step, Step]] = {
     # each skip alone, then together with one-by-one retries: exhaustive
     "opaque-skip": (propose_skips, finalize_skips),
     # spaced-out groups, then split and retry: far fewer optimizer runs
-    "stride67-split": (
-        functools.partial(propose_strided_skips, strides=(6, 7)), split_skips
+    "stride711-split": (
+        functools.partial(propose_strided_skips, strides=(7, 11)), split_skips
     ),
 }
 COMPILE_FLAGS = [
