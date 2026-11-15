@@ -22,7 +22,8 @@ Dead instructions are found with the clang/LLVM optimizer.
 The program is translated to C++ that calls the project's real op functors in program order, and compiled to LLVM IR.
 
 Every instruction is gated by an opaque "maybe skip" variable.
-If the optimizer elides an instruction's "maybe skip" check, running or skipping that instruction makes no observable difference, so the instruction can be considered dead and replaced with nop.
+If the optimizer elides an instruction's "maybe skip" check, running or skipping that instruction makes no observable difference.
+Thus, the instruction can be considered dead and safely replaced with nop.
 
 Instructions are tested all at once and then, for those not yet found dead, individually (pass 1).
 Those found dead are confirmed together, and then permanently eliminated.
