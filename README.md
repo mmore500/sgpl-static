@@ -29,7 +29,7 @@ The remaining instructions are tested again with those gone (pass 2), since remo
 Passes repeat until one makes no further nops.
 
 `--solver` picks how a pass does this.
-`stride711-split` tests instructions in spaced-out groups instead (every 7th, then every 11th).
+Unlike naive `opaque-skip`, `stride711-split` tests instructions in spaced-out groups (every 7th, then every 11th).
 Proposed skips sets are then tried together, with proposed skips that are not accepted recursively split and retried.
 This solver substantially reduces necessary optimizer runs, while producing comparable results.
 
