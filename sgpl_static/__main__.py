@@ -3,6 +3,7 @@ nops."""
 
 import argparse
 import functools
+import hashlib
 import itertools
 import json
 import logging
@@ -108,6 +109,19 @@ def fetch_source(location: str, into: pathlib.Path) -> pathlib.Path:
     return fetch_git(*location.partition("@")[::2])
 
 
+def keep_peripheral(text: str) -> pathlib.Path:
+    """The directory of a copy of the peripheral header `text`. Its path
+    depends only on the contents, so compiles that include it can be cached
+    from one run to the next."""
+    folder = CACHE / "peripheral" / hashlib.sha256(text.encode()).hexdigest()[:16]
+    if not (folder / "peripheral.hpp").exists():
+        folder.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile("w", dir=folder, delete=False) as file:
+            file.write(text)
+        os.replace(file.name, folder / "peripheral.hpp")  # whole, or not there
+    return folder
+
+
 def find_program(document: typing.Any, key_path: str) -> tuple[dict, str]:
     """The instruction list at `key_path` (dot-separated keys) in a program
     or genome document, as (container, key) so it can be replaced in place."""
@@ -182,10 +196,10 @@ def main() -> None:
 def strip(args: argparse.Namespace, program: list, work: pathlib.Path) -> list:
     """`program` (an instruction list) with its dead instructions nopped."""
     size = len(program)
-    (work / "peripheral.hpp").write_text(read(args.peripheral))
     (work / "program.json").write_text(json.dumps({"value0": program}))
     project = fetch_source(args.project, work / "project")
-    flags = [f"-I{work}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
+    peripheral = keep_peripheral(read(args.peripheral))
+    flags = [f"-I{peripheral}", f"-I{ROOT}/include", *shlex.split(args.cxxflags)]
 
     def run(*command: object, **kwargs: typing.Any) -> subprocess.CompletedProcess:
         return subprocess.run(
@@ -196,13 +210,18 @@ def strip(args: argparse.Namespace, program: list, work: pathlib.Path) -> list:
         return run(work / "sgpl_gen", *command, stdout=subprocess.PIPE).stdout
 
     logging.info("building the front end")
-    # the user's flags are relative to the project root
-    run("clang++", *flags, "-DNDEBUG", "-w", "-O1", ROOT / "source/sgpl_gen.cpp",
-        "-o", work / "sgpl_gen", cwd=project)
+    # The user's flags are relative to the project root. The front end
+    # depends on the project and the peripheral, not on the program, so a
+    # compiler cache ($CXX set to "ccache clang++") can reuse its compile
+    # across runs; that needs the compile and the link as separate steps.
+    cxx = shlex.split(os.environ.get("CXX", "clang++"))
+    run(*cxx, *flags, "-DNDEBUG", "-w", "-O1", "-c",
+        ROOT / "source/sgpl_gen.cpp", "-o", work / "sgpl_gen.o", cwd=project)
+    run(*cxx, *flags, work / "sgpl_gen.o", "-o", work / "sgpl_gen", cwd=project)
     candidates = list(map(int, gen("candidates", work / "program.json").split()))
     gen("gencpp", work / "program.json", work / "program.cpp")
     logging.info("compiling the program")
-    run("clang++", *flags, *COMPILE_FLAGS, work / "program.cpp",
+    run(*cxx, *flags, *COMPILE_FLAGS, work / "program.cpp",
         "-o", work / "program.ll", cwd=project)
 
     logging.info(f"testing {len(candidates)} of {size} instructions")

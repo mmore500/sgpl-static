@@ -3,12 +3,14 @@ FROM ubuntu:24.04
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/opt/sgpl-static
 
 # clang and opt 18; MPI and METIS headers, which conduit's headers include.
+# CXX is the compiler the tool runs: ccache lets it reuse the front end's
+# compile across runs (set CXX=clang++ to turn that off).
 # CPATH puts MPI's headers on the compiler's default include path, where
 # METIS's already are.
-ENV CPATH=/opt/mpi-include
+ENV CPATH=/opt/mpi-include CXX="ccache clang++"
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates clang-18 git libmetis-dev libopenmpi-dev llvm-18 \
+        ca-certificates ccache clang-18 git libmetis-dev libopenmpi-dev llvm-18 \
         python3 python3-tqdm \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/clang++-18 /usr/local/bin/clang++ \
