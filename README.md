@@ -25,7 +25,7 @@ The optimizer then does its ordinary dead-code elimination.
 If it deletes an instruction's maybe-skip call, running or skipping that instruction makes no observable difference, so the instruction is dead.
 
 Instructions are tested all at once and then, for those not yet found dead, one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
-The remaining instructions are tested again with those gone (pass 2), since removing one instruction can make another dead.
+The remaining instructions are tested again (pass 2), since removing instructions can make others dead.
 Passes repeat until one finds no further nops, or maximum passes is reached.
 
 `--solver` picks how a pass does this.
