@@ -56,7 +56,7 @@ singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.2 \
 | Option | Meaning | Default |
 |---|---|---|
 | `--input` | program or genome JSON: file, URL, or `-` for stdin | `-` |
-| `--input-key` | where the instruction list is, e.g. `value0.program` | required |
+| `--input-key` | path to instruction list in input JSON schema, e.g. `value0.program` | required |
 | `--project` | directory, tarball URL, or `git-url@ref` | required |
 | `--peripheral` | peripheral header: file or URL | required |
 | `--output` | stripped JSON: file, or `-` for stdout | `-` |
