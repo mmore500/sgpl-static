@@ -83,7 +83,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
   --cxxflags "-Iinclude -Ithird-party/signalgp-lite/include" \
   --solver stride711-split \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
-  --output stripped.json
+  --output /dev/stdout
 ```
 
 ## Usage Example: Symbulation
@@ -97,7 +97,7 @@ apptainer run docker://ghcr.io/mmore500/sgpl-static:v0.2.0 \
   --cxxflags "-Isource -Isignalgp-lite/include -IEmpirical/include -std=c++20 -DUIT_VENDORIZE_EMP -DTAG_NUM_BITS=32" \
   --solver stride711-split \
   --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce' \
-  --output stripped.json
+  --output /dev/stdout
 ```
 
 ## Installation
