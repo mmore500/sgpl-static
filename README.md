@@ -65,7 +65,7 @@ singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.2 \
 | `--seed` | shuffle the order in which conflicting skips are retried | none |
 | `--jobs` | how many optimizer trials to dispatch in parallel | `SLURM_CPUS_PER_TASK`, else all cores |
 
-Suggested subset of `-O2` optimizer passes to expedite evaluation:
+Suggested useful but fast-to-evaluate subset of `-O2` optimizer passes:
 
 ```bash
 --optflags '-passes=function(early-cse,instcombine<no-verify-fixpoint>),cgscc(devirt<4>(inline,function<eager-inv;no-rerun>(sroa,early-cse<memssa>,simplifycfg<switch-range-to-icmp>,loop(loop-unroll-full),sroa,gvn,bdce,jump-threading))),deadargelim,function(loop(loop-deletion),instcombine<no-verify-fixpoint>,simplifycfg<forward-switch-cond;switch-range-to-icmp;hoist-common-insts;sink-common-insts>,instcombine<no-verify-fixpoint>),globaldce'
