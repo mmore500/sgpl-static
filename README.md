@@ -20,17 +20,18 @@ sgpl-static strips dead instructions from a [signalgp-lite](https://github.com/m
 An instruction is dead if it can never run, or if it runs but nothing it computes can ever reach anything observable.
 Dead instructions are found with the clang/LLVM optimizer.
 The program is translated to C++ that calls the project's real op functors in program order, and compiled to LLVM IR.
-In that translation every instruction sits behind a *maybe skip*: a call the optimizer cannot see into decides whether the instruction runs.
-The optimizer then does its ordinary dead-code elimination.
-If it deletes an instruction's maybe-skip call, running or skipping that instruction makes no observable difference, so the instruction is dead.
 
-Instructions are tested all at once and then, for those not yet found dead, one at a time (pass 1); those found dead are confirmed together and from then on always skipped.
-The remaining instructions are tested again (pass 2), since removing instructions can make others dead.
-Passes repeat until one finds no further nops, or maximum passes is reached.
+Every instruction is gated by an opaque "maybe skip" variable.
+If the optimizer elides an instruction's "maybe skip" check, running or skipping that instruction makes no observable difference, so the instruction can be considered dead and replaced with nop.
 
-`--solver` picks how a pass does this.
-Unlike naive `opaque-skip`, `stride711-split` tests instructions in spaced-out groups (every 7th, then every 11th).
-Proposed skips sets are then tried together, with proposed skips that are not accepted recursively split and retried.
+Instructions are tested all at once and then, for those not yet found dead, individually (pass 1).
+Those found dead are confirmed together, and then permanently eliminated.
+Remaining instructions may then be tested again (pass 2), since removing instructions can make others dead.
+Passes repeat until no further nops are found, or maximum passes is reached.
+
+The `--solver` kwarg selects among available screening procedures.
+Unlike single-instruction tests by the naive `opaque-skip` solver, the `stride711-split` solver adds instructions in strided sets (every 7th, then every 11th).
+Proposed skip sets are then tested together, with any unaccepted skips recursively split and retried.
 This solver substantially reduces necessary optimizer runs, while producing comparable results.
 
 ## Usage
