@@ -36,7 +36,7 @@ This solver substantially reduces necessary optimizer runs, while producing comp
 ## Usage
 
 ```bash
-singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
+singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
   --input genome.json \
   --input-key value0.program \
   --project path/to/project \
@@ -75,7 +75,7 @@ Suggested optimizer passes:
 ## Usage Example: DISHTINY
 
 ```bash
-singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
+singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
   --input https://raw.githubusercontent.com/mmore500/sgpl-static/380be308d15554931d4dcfa476022eff300573ee/tests/data/dishtiny-prq49-series16005-stint100.json \
   --input-key value0.program \
   --project https://github.com/mmore500/dishtiny@978abb3e1839820b77693490d34d8ce88e4fba2d \
@@ -89,7 +89,7 @@ singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
 ## Usage Example: Symbulation
 
 ```bash
-singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
+singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
   --input https://raw.githubusercontent.com/mmore500/sgpl-static/380be308d15554931d4dcfa476022eff300573ee/tests/data/symbulation-NotNandProgram100.json \
   --input-key value0 \
   --project https://github.com/anyaevostinar/SymbulationEmp@08a4cd4beddb52438fe77de749c7d2ff2b085e91 \
@@ -105,7 +105,7 @@ singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 \
 Run via singularity (aka apptainer):
 
 ```bash
-singularity run docker://ghcr.io/mmore500/sgpl-static:v0.3.1 --help
+singularity run --cleanenv docker://ghcr.io/mmore500/sgpl-static:v0.3.1 --help
 ```
 
 Apptainer install instructions for Linux, Mac, and Windows are [here](https://apptainer.org/docs/admin/main/installation.html).
