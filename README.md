@@ -35,7 +35,7 @@ Passes repeat until no further nops are found, or maximum passes is reached.
 
 The `--solver` kwarg selects among available screening procedures.
 Unlike single-instruction tests by the naive `opaque-skip` solver, the `stride711-split` solver adds instructions in strided sets (every 7th, then every 11th).
-Proposed skip sets are then tested together, with any unaccepted skips recursively split and retried.
+Each pass pools and tests newly proposed skips together, with any unaccepted skips recursively split and retried.
 This solver substantially reduces necessary optimizer runs, while producing comparable results.
 
 ## Usage
